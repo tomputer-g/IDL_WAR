@@ -50,16 +50,6 @@ if __name__=='__main__':
     # prompts = ["A blue wailmer pokemon in the sea"]
     latents = generate_initial_noise(len(prompts), latent_shape=(4, 96, 96), device=device, dtype=torch.float32)
     pipe = get_pipeline(device, dtype=torch.float32)
-    # pipe.enable_attention_slicing()
     imgs = denoise(pipe, prompts, latents)
-    # imgs = pipe(
-    #     prompt=prompts,
-    #     # latents=latents,
-    #     guidance_scale=7.5,
-    #     num_inference_steps=50,
-    #     # height=512,
-    #     # width=512,
-    # )
     for i, img in enumerate(imgs.images):
         img.save(f"{prompts[i]}.jpg")
-    # imgs.images[0].save("cat.jpg")
