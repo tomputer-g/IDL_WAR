@@ -18,10 +18,10 @@ def get_pipeline(device: Optional[str] = None, dtype: torch.dtype = torch.float1
         torch_dtype=dtype,
     ).to(device)
 
-    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-
-
     return pipe
+
+def add_dpm_solver_multistep_scheduler(pipeline: StableDiffusionPipeline):
+    pipeline.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
 
 def denoise(
     pipe: StableDiffusionPipeline,
@@ -35,8 +35,6 @@ def denoise(
         latents=latents,
         guidance_scale=guidance_scale,
         num_inference_steps=num_steps,
-        # height=512,
-        # width=512,
     )
 
     return results
@@ -50,6 +48,7 @@ if __name__=='__main__':
     # prompts = ["A blue wailmer pokemon in the sea"]
     latents = generate_initial_noise(len(prompts), latent_shape=(4, 96, 96), device=device, dtype=torch.float32)
     pipe = get_pipeline(device, dtype=torch.float32)
+    add_dpm_solver_multistep_scheduler(pipe)
     imgs = denoise(pipe, prompts, latents)
     for i, img in enumerate(imgs.images):
         img.save(f"{prompts[i]}.jpg")
