@@ -1,6 +1,7 @@
 diffusers
 transformers
 torch
+torchvision
 accelerate
 numpy
 xformers
