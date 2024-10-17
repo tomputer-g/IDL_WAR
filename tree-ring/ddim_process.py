@@ -2,7 +2,7 @@ import torch
 from torchvision import transforms
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 from diffusers import DDIMScheduler, DDIMInverseScheduler
-from typing import Optional
+from typing import Optional, Iterable
 
 def generate_initial_noise(
     batch_size: int,
@@ -37,27 +37,33 @@ def denoise(
     prompts: list[str],
     latents: torch.Tensor,
     guidance_scale: float = 7.5,
+    size=768,
     num_steps: int = 50,
 ):
-    results = pipe(
-        prompt=prompts,
-        latents=latents,
-        guidance_scale=guidance_scale,
-        num_inference_steps=num_steps,
-    )
+    with torch.no_grad():
+        results = pipe(
+            prompt=prompts,
+            latents=latents,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_steps,
+            height=size,
+            width=size,
+        )
 
     return results
 
-def renoise(pipe, image_latents, guidance_scale=1.0, num_steps = 50):
+def renoise(pipe, image_latents, guidance_scale=1.0, num_steps=50):
     curr_scheduler = pipe.scheduler
     pipe.scheduler = DDIMInverseScheduler.from_config(pipe.scheduler.config)
-    inverted_latents = pipe(
-        prompt='',
-        latents=image_latents,
-        guidance_scale=guidance_scale,
-        num_inference_steps=num_steps,
-        output_type='latent',
-    )
+
+    with torch.no_grad():
+        inverted_latents = pipe(
+            prompt='',
+            latents=image_latents,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_steps,
+            output_type='latent',
+        )
 
     pipe.scheduler = curr_scheduler
     return inverted_latents
@@ -78,18 +84,18 @@ def renoise(pipe, image_latents, guidance_scale=1.0, num_steps = 50):
 
     # return image_latents
 
-def preprocess_images(images: list, device: Optional[str] = None):
+def preprocess_images(images: Iterable, size=768, device: Optional[str] = None):
     # Preprocess a batch of images
     preprocess = transforms.Compose([
-        transforms.Resize((768, 768)),  # Resize all images to 512x512
+        transforms.Resize(size),  # Resize all images to 512x512
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5]),  # Normalize to range [-1, 1]
     ])
     
     # Preprocess each image and stack them into a batch
     images = [preprocess(image) for image in images]
-    image_tensor = torch.cat(images, dim=0).to(device)  # Create a batch by concatenating
-    
+    image_tensor = torch.stack(images).to(device)  # Create a batch by concatenating
+
     if len(image_tensor.size()) < 4:
         image_tensor = image_tensor.unsqueeze(0)
 
@@ -114,26 +120,40 @@ if __name__=='__main__':
 
     # prompts = ["Anime art of a dog in Shenandoah National Park"]
     # prompts = ["An astronaut riding a horse in Zion National Park"]
-    prompts = ["White Pegasus eating from a large bowl of ice cream"]
+    # prompts = ["White Pegasus eating from a large bowl of ice cream"]
     # prompts = ["A blue wailmer pokemon in the sea"]
-    latents = generate_initial_noise(len(prompts), latent_shape=(4, 96, 96), device=device, dtype=torch.float32)
+    prompts = [
+        "Anime art of a dog in Shenandoah National Park",
+        "An astronaut riding a horse in Zion National Park",
+        "White Pegasus eating from a large bowl of ice cream",
+        "A blue wailmer pokemon in the sea",
+    ]
+
     pipe = get_pipeline(device, dtype=torch.float32)
 
-    for i, img in enumerate(get_images(pipe, latents)):
-        image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
-        image.save(f"original_noise_{prompts[i]}.jpg", format="JPEG")
+    for batch in prompts:
+        batch = [batch]
 
-    
-    imgs = denoise(pipe, prompts, latents)
-    for i, img in enumerate(imgs.images):
-        img.save(f"{prompts[i]}.jpg")
+        latents = generate_initial_noise(len(batch), latent_shape=(4, 96, 96), device=device, dtype=torch.float32)
+        # latents = generate_initial_noise(len(batch), latent_shape=(4, 64, 64), device=device, dtype=torch.float32)
 
-    # reverse
-    images_tensor = preprocess_images(imgs.images, device=device)
-    latents = get_latents(pipe, images_tensor)
-    renoised = renoise(pipe, latents)
-    # print(renoised.shape)
+        for i, img in enumerate(get_images(pipe, latents)):
+            image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
+            image.save(f"original_noise_{batch[i]}.jpg", format="JPEG")
 
-    for i, img in enumerate(get_images(pipe, renoised.images)):
-        image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
-        image.save(f"noise_{prompts[i]}.jpg", format="JPEG")
+        
+        imgs = denoise(pipe, batch, latents, size=768)
+        for i, img in enumerate(imgs.images):
+            img.save(f"{batch[i]}.jpg")
+
+        # reverse
+        images_tensor = preprocess_images(imgs.images, device=device, size=768)
+        latents = get_latents(pipe, images_tensor)
+        renoised = renoise(pipe, latents)
+
+        for i, img in enumerate(get_images(pipe, renoised.images)):
+            image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
+            image.save(f"noise_{batch[i]}.jpg", format="JPEG")
+
+        del latents
+        del images_tensor      
