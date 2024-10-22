@@ -1,4 +1,5 @@
 import torch
+from scipy.stats import ncx2
 
 # add watermark to noise, returns key
 def watermark(latent_tensor, type="rings", radius=10):
@@ -81,3 +82,24 @@ def generate_key(type="rings", radius=10):
     key = fft(key)
 
     return key, circle_mask
+
+def p_value(latent_tensor, key, mask):
+    # apply fft
+    fft_applied = fft(latent_tensor)
+
+    # extract bits corresponding to key
+    key_from_latents = fft_applied[0, mask] # assume key is same in all dims
+
+    # calculate score
+    variance = 1 / mask.sum() * torch.square(torch.abs(key[mask])).sum()
+    dof = mask.sum()
+    nc = 1 / variance * torch.square(torch.abs(key[mask])).sum()
+    score = 1 / variance * torch.square(torch.abs(key_from_latents - key[mask])).sum()
+
+    # calculate p-value
+    p_val = ncx2.cdf(score, dof, nc)
+
+    return p_val
+
+def detect(latent_tensor, key, mask, p_val_thresh=0.01):
+    return p_value(latent_tensor, key, mask) < p_val_thresh

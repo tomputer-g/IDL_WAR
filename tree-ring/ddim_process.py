@@ -118,10 +118,6 @@ def get_images(pipe, latents):
 if __name__=='__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # prompts = ["Anime art of a dog in Shenandoah National Park"]
-    # prompts = ["An astronaut riding a horse in Zion National Park"]
-    # prompts = ["White Pegasus eating from a large bowl of ice cream"]
-    # prompts = ["A blue wailmer pokemon in the sea"]
     prompts = [
         "Anime art of a dog in Shenandoah National Park",
         "An astronaut riding a horse in Zion National Park",

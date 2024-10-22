@@ -5,3 +5,4 @@ torchvision
 accelerate
 numpy
 xformers
+scipy
