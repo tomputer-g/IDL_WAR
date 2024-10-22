@@ -1,17 +1,11 @@
 """
-
 Credit: https://github.com/XuandongZhao/WatermarkAttacker/blob/main/regen_pipe.py
 """
 
-import inspect
 from typing import Callable, List, Optional, Union
 import torch
 from diffusers import StableDiffusionPipeline
-from diffusers.utils import deprecate, logging
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
-
-logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
-
 
 class ReSDPipeline(StableDiffusionPipeline):
     @torch.no_grad()
