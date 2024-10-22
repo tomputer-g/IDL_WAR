@@ -5,6 +5,8 @@ from diffusers import DDIMScheduler, DDIMInverseScheduler
 from typing import Optional, Iterable
 from PIL.Image import Image
 
+from watermark import watermark, detect
+
 
 class ImageGenerator:
     def __init__(
@@ -36,12 +38,11 @@ class ImageGenerator:
             image.save(f"original_noise_{prompts[i]}.jpg", format="JPEG")
 
         imgs = self._denoise(prompts, latents)
-        
 
         for i, img in enumerate(imgs.images):
             img.save(f"image_{prompts[i]}.jpg")
 
-        self.prompts = prompts # used for saving debugging images later
+        self.prompts = prompts  # used for saving debugging images later
 
         del latents
         return imgs.images
@@ -133,7 +134,9 @@ class ImageGenerator:
 
     def _renoise(self, image_latents) -> list:
         curr_scheduler = self.pipe.scheduler
-        self.pipe.scheduler = self.inverse_scheduler.from_config(self.pipe.scheduler.config)
+        self.pipe.scheduler = self.inverse_scheduler.from_config(
+            self.pipe.scheduler.config
+        )
 
         with torch.no_grad():
             inverted_latents = self.pipe(
@@ -182,6 +185,78 @@ class ImageGenerator:
         return images
 
 
+class TreeRingImageGenerator(ImageGenerator):
+    def __init__(
+        self,
+        model: str = "stabilityai/stable-diffusion-2",
+        scheduler=DDIMScheduler,
+        inverse_scheduler=DDIMInverseScheduler,
+        hyperparams: dict[str, any] = {
+            "resolution": 512,
+            "num_steps": 50,
+            "device": None,
+            "half_precision": False,
+            "denoise_guidance_scale": 7.5,
+            "renoise_guidance_scale": 1.0,
+        },
+        tree_ring_hyperparams: dict[str, any] = {
+            "type": "rings",
+            "radius": 10,
+            "p_val_thresh": 0.01,
+        },
+    ):
+        super().__init__(
+            model=model,
+            scheduler=scheduler,
+            inverse_scheduler=inverse_scheduler,
+            hyperparams=hyperparams,
+        )
+
+        self.type = tree_ring_hyperparams.get("type", "rings")
+        self.radius = tree_ring_hyperparams.get("radius", 10)
+        self.p_val_thresh = tree_ring_hyperparams.get("p_val_thresh", 0.01)
+
+    def generate_watermarked_images(
+        self, prompts: list[str]
+    ) -> tuple[list[Image], list[torch.Tensor], list[torch.Tensor]]:
+        latents = self._generate_initial_noise(len(prompts))
+
+        keys = []
+        masks = []
+        for i in range(latents.shape[0]):
+            tensor = latents[i]
+            assert tensor.shape == self.latent_shape
+
+            tensor, key, mask = watermark(
+                tensor, self.type, self.radius, device=self.device
+            )
+            latents[i] = tensor
+            keys.append(key)
+            masks.append(mask)
+
+        imgs = self._denoise(prompts, latents)
+
+        for i, img in enumerate(imgs.images):
+            img.save(f"watermarked_image_{prompts[i]}.jpg")
+
+        self.prompts = prompts  # used for saving debugging images later
+
+        del latents
+        return imgs.images, keys, masks
+
+    def detect(
+        self, images: list[Image], keys: list[torch.Tensor], masks: list[torch.Tensor]
+    ) -> list[bool]:
+        latents = self.renoise_images(images)
+
+        results = []
+        for i in range(len(images)):
+            results.append(
+                detect(latents[i], keys[i], masks[i], p_val_thresh=self.p_val_thresh)
+            )
+        return results
+
+
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -192,8 +267,11 @@ if __name__ == "__main__":
         "A blue wailmer pokemon in the sea",
     ]
 
-    generator = ImageGenerator(hyperparams={"resolution": 768})
+    generator = TreeRingImageGenerator(hyperparams={"resolution": 768})
 
     for prompt in prompts:
-        images = generator.generate_images([prompt])
-        generator.renoise_images(images)
+        # images = generator.generate_images([prompt])
+        # generator.renoise_images(images)
+
+        images, keys, masks = generator.generate_watermarked_images([prompt])
+        print(generator.detect(images, keys, masks))
