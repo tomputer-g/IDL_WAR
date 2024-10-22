@@ -8,3 +8,4 @@ xformers
 scipy
 matplotlib
 datasets
+scikit-learn

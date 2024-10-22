@@ -31,9 +31,9 @@ class ImageGenerator:
         self.inverse_scheduler = inverse_scheduler
 
     def generate_images(
-        self, prompts: list[str], generator: torch.Generator
+        self, prompts: list[str], rng_generator: torch.Generator
     ) -> list[Image]:
-        latents = self._generate_initial_noise(len(prompts), generator)
+        latents = self._generate_initial_noise(len(prompts), rng_generator)
 
         # for i, img in enumerate(self._get_images(latents)):
         #     image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
