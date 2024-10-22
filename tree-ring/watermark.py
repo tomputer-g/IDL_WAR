@@ -88,7 +88,7 @@ def generate_key(size, type="rings", radius=10, device="cpu"):
                         distance_from_center_squared
                         <= torch.square(outer_radius_tensor)
                     )
-                key[in_ring_mask] = values[0][i - 1]
+                key[in_ring_mask] = values[0][i - 1 + int(center_x)]
         case _:
             raise Exception(f"Invalid tree-ring type {type}")
 
@@ -114,5 +114,6 @@ def p_value(latent_tensor, key, mask):
     return p_val
 
 
-def detect(latent_tensor, key, mask, p_val_thresh=0.01):
-    return p_value(latent_tensor, key, mask) < p_val_thresh
+def detect(latent_tensor, key, mask, p_val_thresh=0.01) -> tuple[float, bool]:
+    p_val = p_value(latent_tensor, key, mask)
+    return float(p_val), bool(p_val < p_val_thresh)
