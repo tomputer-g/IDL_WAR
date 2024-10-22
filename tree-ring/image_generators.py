@@ -33,14 +33,14 @@ class ImageGenerator:
     def generate_images(self, prompts: list[str], generator: torch.Generator) -> list[Image]:
         latents = self._generate_initial_noise(len(prompts), generator)
 
-        for i, img in enumerate(self._get_images(latents)):
-            image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
-            image.save(f"original_noise_{prompts[i]}.jpg", format="JPEG")
+        # for i, img in enumerate(self._get_images(latents)):
+        #     image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
+        #     image.save(f"original_noise_{prompts[i]}.jpg", format="JPEG")
 
         imgs = self._denoise(prompts, latents)
 
-        for i, img in enumerate(imgs.images):
-            img.save(f"image_{prompts[i]}.jpg")
+        # for i, img in enumerate(imgs.images):
+        #     img.save(f"image_{prompts[i]}.jpg")
 
         self.prompts = prompts  # used for saving debugging images later
 
@@ -52,9 +52,9 @@ class ImageGenerator:
         latents = self._get_latents(images_tensor)
         renoised = self._renoise(latents)
 
-        for i, img in enumerate(self._get_images(renoised.images)):
-            image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
-            image.save(f"noise_{self.prompts[i]}.jpg", format="JPEG")
+        # for i, img in enumerate(self._get_images(renoised.images)):
+        #     image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
+        #     image.save(f"noise_{self.prompts[i]}.jpg", format="JPEG")
 
         del latents
         del images_tensor
@@ -236,8 +236,8 @@ class TreeRingImageGenerator(ImageGenerator):
 
         imgs = self._denoise(prompts, latents)
 
-        for i, img in enumerate(imgs.images):
-            img.save(f"watermarked_image_{prompts[i]}.jpg")
+        # for i, img in enumerate(imgs.images):
+        #     img.save(f"watermarked_image_{prompts[i]}.jpg")
 
         self.prompts = prompts  # used for saving debugging images later
 
