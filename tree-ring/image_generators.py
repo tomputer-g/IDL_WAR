@@ -268,14 +268,14 @@ if __name__ == "__main__":
         "A blue wailmer pokemon in the sea",
     ]
 
-    generator = TreeRingImageGenerator(hyperparams={"resolution": 512})
+    generator = TreeRingImageGenerator(model="stabilityai/stable-diffusion-2", hyperparams={"resolution": 512, "denoise_guidance_scale": 7.5})
 
     for prompt in prompts:
-        # rng_generator = torch.cuda.manual_seed(0)
-        # images = generator.generate_images([prompt], rng_generator)
+        rng_generator = torch.cuda.manual_seed(123)
+        images = generator.generate_images([prompt], rng_generator)
 
-        rng_generator = torch.cuda.manual_seed(0)
+        rng_generator = torch.cuda.manual_seed(123)
         watermarked_images, keys, masks = generator.generate_watermarked_images([prompt], rng_generator)
         
-        # print(generator.detect(images, keys, masks))
+        print(generator.detect(images, keys, masks))
         print(generator.detect(watermarked_images, keys, masks))

@@ -6,3 +6,4 @@ accelerate
 numpy
 xformers
 scipy
+matplotlib
