@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="root@163.239.27.108:8891" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="root@163.239.27.108:8891">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/cmu/project/StegaStamp_pytorch" local="$PROJECT_DIR$" web="/" />
+            <mapping local="" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
