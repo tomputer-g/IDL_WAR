@@ -10,18 +10,18 @@ def watermark(latent_tensor, type="rings", radius=10, device="cpu"):
     # generate key
     key, mask = generate_key(type=type, radius=radius, device=device)
 
-    # inject key
+    # inject key to 0th dimension
     center_x = (fft_applied.shape[2] - 1) // 2
     center_y = (fft_applied.shape[1] - 1) // 2
-    for dim in range(fft_applied.shape[0]):
-        fft_applied[
-            dim,
-            center_y - radius : center_y + radius,
-            center_x - radius : center_x + radius,
-        ][mask] = key[mask]
+    # # for dim in range(fft_applied.shape[0]):
+    # fft_applied[
+    #     0,
+    #     center_y - radius : center_y + radius,
+    #     center_x - radius : center_x + radius,
+    # ][mask] = key[mask]
 
     # reverse fft
-    latent_tensor = ifft(fft_applied).real
+    # latent_tensor = ifft(fft_applied).real
 
     # enlarge mask/key to size of image
     large_key = torch.zeros(fft_applied.shape[1:], dtype=torch.complex64, device=device)
@@ -33,6 +33,12 @@ def watermark(latent_tensor, type="rings", radius=10, device="cpu"):
     large_mask[
         center_y - radius : center_y + radius, center_x - radius : center_x + radius
     ] = mask
+
+    # inject key
+    fft_applied[0, large_mask] = large_key[large_mask]
+
+    # reverse fft
+    latent_tensor = ifft(fft_applied).real
 
     # return key, mask, and new latent
     return latent_tensor, large_key, large_mask
@@ -76,7 +82,7 @@ def generate_key(type="rings", radius=10, device="cpu"):
         case "zeros":
             key[circle_mask] = 0
         case "rand":
-            key[circle_mask] = torch.randn(circle_mask.shape, device=device)[
+            key[circle_mask] = fft(torch.randn(circle_mask.shape, device=device))[
                 circle_mask
             ]
         case "rings":
@@ -99,10 +105,12 @@ def generate_key(type="rings", radius=10, device="cpu"):
                         <= torch.square(outer_radius_tensor)
                     )
                 key[in_ring_mask] = values[i - 1]
+            
+            key = fft(key)
         case _:
             raise Exception(f"Invalid tree-ring type {type}")
 
-    key = fft(key)
+    # key = fft(key)
 
     return key, circle_mask
 
@@ -112,16 +120,21 @@ def p_value(latent_tensor, key, mask):
     fft_applied = fft(latent_tensor)
 
     # extract bits corresponding to key
-    key_from_latents = fft_applied[0, mask]  # assume key is same in all dims
+    key_from_latents = fft_applied[0, mask]  # assume key is 0th dim
 
     # calculate score
-    variance = 1 / mask.sum() * torch.square(torch.abs(key[mask])).sum()
+    variance = 1 / mask.sum() * torch.square(torch.abs(key_from_latents)).sum()
+    print(variance)
     dof = mask.sum()
+    print(dof)
     nc = 1 / variance * torch.square(torch.abs(key[mask])).sum()
-    score = 1 / variance * torch.square(torch.abs(key_from_latents - key[mask])).sum()
+    print(torch.square(torch.abs(key[mask])).sum())
+    print(nc)
+    score = 1 / variance * torch.square(torch.abs(key[mask] - key_from_latents)).sum()
+    print(score)
 
     # calculate p-value
-    p_val = ncx2.cdf(score.cpu(), dof.cpu(), nc.cpu())
+    p_val = ncx2.cdf(score.cpu(), df=dof.cpu(), nc=nc.cpu())
 
     return p_val
 

@@ -1,8 +1,8 @@
 import torch
 from torchvision import transforms
-from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
+from diffusers import StableDiffusionPipeline
 from diffusers import DDIMScheduler, DDIMInverseScheduler
-from typing import Optional, Iterable
+from typing import Optional
 from PIL.Image import Image
 
 from watermark import watermark, detect
@@ -30,8 +30,8 @@ class ImageGenerator:
         self.scheduler = scheduler
         self.inverse_scheduler = inverse_scheduler
 
-    def generate_images(self, prompts: list[str]) -> list[Image]:
-        latents = self._generate_initial_noise(len(prompts))
+    def generate_images(self, prompts: list[str], generator: torch.Generator) -> list[Image]:
+        latents = self._generate_initial_noise(len(prompts), generator)
 
         for i, img in enumerate(self._get_images(latents)):
             image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
@@ -114,10 +114,10 @@ class ImageGenerator:
 
         return pipe
 
-    def _generate_initial_noise(self, batch_size: int) -> torch.Tensor:
+    def _generate_initial_noise(self, batch_size: int, generator: torch.Generator) -> torch.Tensor:
         output_shape = (batch_size, *self.latent_shape)
         assert len(output_shape) == 4
-        return torch.randn(output_shape, device=self.device, dtype=self.dtype)
+        return torch.randn(output_shape, device=self.device, dtype=self.dtype, generator=generator)
 
     def _denoise(self, prompts: list[str], latents: torch.Tensor) -> list:
         with torch.no_grad():
@@ -156,7 +156,7 @@ class ImageGenerator:
             [
                 transforms.Resize(self.resolution),  # Resize all images to 512x512
                 transforms.ToTensor(),
-                transforms.Normalize([0.5], [0.5]),  # Normalize to range [-1, 1]
+                # transforms.Normalize([0.5], [0.5]),  # Normalize to range [-1, 1]
             ]
         )
 
@@ -217,9 +217,9 @@ class TreeRingImageGenerator(ImageGenerator):
         self.p_val_thresh = tree_ring_hyperparams.get("p_val_thresh", 0.01)
 
     def generate_watermarked_images(
-        self, prompts: list[str]
+        self, prompts: list[str], generator: torch.Generator
     ) -> tuple[list[Image], list[torch.Tensor], list[torch.Tensor]]:
-        latents = self._generate_initial_noise(len(prompts))
+        latents = self._generate_initial_noise(len(prompts), generator)
 
         keys = []
         masks = []
@@ -258,6 +258,7 @@ class TreeRingImageGenerator(ImageGenerator):
 
 
 if __name__ == "__main__":
+    from diffusers import DPMSolverMultistepScheduler, DPMSolverMultistepInverseScheduler
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     prompts = [
@@ -267,11 +268,14 @@ if __name__ == "__main__":
         "A blue wailmer pokemon in the sea",
     ]
 
-    generator = TreeRingImageGenerator(hyperparams={"resolution": 768})
+    generator = TreeRingImageGenerator(scheduler=DPMSolverMultistepScheduler, inverse_scheduler=DPMSolverMultistepInverseScheduler, hyperparams={"resolution": 512})
 
     for prompt in prompts:
-        # images = generator.generate_images([prompt])
-        # generator.renoise_images(images)
+        rng_generator = torch.cuda.manual_seed(0)
+        images = generator.generate_images([prompt], rng_generator)
 
-        images, keys, masks = generator.generate_watermarked_images([prompt])
+        rng_generator = torch.cuda.manual_seed(0)
+        watermarked_images, keys, masks = generator.generate_watermarked_images([prompt], rng_generator)
+        
         print(generator.detect(images, keys, masks))
+        print(generator.detect(watermarked_images, keys, masks))
