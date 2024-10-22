@@ -14,21 +14,8 @@ def watermark(latent_tensor, type="rings", radius=10, device="cpu"):
         size=latent_tensor.shape[-1], type=type, radius=radius, device=device
     )
 
-    # enlarge mask/key to size of image
-    center_x = (fft_applied.shape[2] - 1) // 2
-    center_y = (fft_applied.shape[1] - 1) // 2
-    large_key = torch.zeros(fft_applied.shape[1:], dtype=torch.complex64, device=device)
-    large_key[
-        center_y - radius : center_y + radius, center_x - radius : center_x + radius
-    ][mask] = key[mask]
-
-    large_mask = torch.zeros(fft_applied.shape[1:], dtype=bool, device=device)
-    large_mask[
-        center_y - radius : center_y + radius, center_x - radius : center_x + radius
-    ] = mask
-
     # inject key
-    fft_applied[0, large_mask] = large_key[large_mask]
+    fft_applied[0, mask] = key[mask]
 
     # useful code for debugging if injected key is reasonable
     # visualize_tensor(fft_applied.real, name="real.png")
@@ -38,7 +25,7 @@ def watermark(latent_tensor, type="rings", radius=10, device="cpu"):
     latent_tensor = ifft(fft_applied).real
 
     # return key, mask, and new latent
-    return latent_tensor, large_key, large_mask
+    return latent_tensor, key, mask
 
 
 # perform fast fourier transform on latents
@@ -55,7 +42,7 @@ def ifft(fft_latent_tensor):
 
 # generate the 2D watermark key values
 def generate_key(size, type="rings", radius=10, device="cpu"):
-    height, width = radius * 2, radius * 2
+    height, width = size, size
 
     circle_mask = torch.zeros((height, width), dtype=bool, device=device)
     y, x = torch.meshgrid(
@@ -101,7 +88,7 @@ def generate_key(size, type="rings", radius=10, device="cpu"):
                         distance_from_center_squared
                         <= torch.square(outer_radius_tensor)
                     )
-                key[in_ring_mask] = values[0][i - 1 + int(center_x)]
+                key[in_ring_mask] = values[0][i - 1]
         case _:
             raise Exception(f"Invalid tree-ring type {type}")
 
