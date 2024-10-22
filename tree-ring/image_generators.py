@@ -258,7 +258,7 @@ class TreeRingImageGenerator(ImageGenerator):
 
 
 if __name__ == "__main__":
-    from diffusers import DPMSolverMultistepScheduler, DPMSolverMultistepInverseScheduler
+    # from diffusers import DPMSolverMultistepScheduler, DPMSolverMultistepInverseScheduler
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     prompts = [
@@ -268,14 +268,14 @@ if __name__ == "__main__":
         "A blue wailmer pokemon in the sea",
     ]
 
-    generator = TreeRingImageGenerator(scheduler=DPMSolverMultistepScheduler, inverse_scheduler=DPMSolverMultistepInverseScheduler, hyperparams={"resolution": 512})
+    generator = TreeRingImageGenerator(hyperparams={"resolution": 512})
 
     for prompt in prompts:
-        rng_generator = torch.cuda.manual_seed(0)
-        images = generator.generate_images([prompt], rng_generator)
+        # rng_generator = torch.cuda.manual_seed(0)
+        # images = generator.generate_images([prompt], rng_generator)
 
         rng_generator = torch.cuda.manual_seed(0)
         watermarked_images, keys, masks = generator.generate_watermarked_images([prompt], rng_generator)
         
-        print(generator.detect(images, keys, masks))
+        # print(generator.detect(images, keys, masks))
         print(generator.detect(watermarked_images, keys, masks))
