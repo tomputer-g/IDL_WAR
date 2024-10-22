@@ -30,7 +30,9 @@ class ImageGenerator:
         self.scheduler = scheduler
         self.inverse_scheduler = inverse_scheduler
 
-    def generate_images(self, prompts: list[str], generator: torch.Generator) -> list[Image]:
+    def generate_images(
+        self, prompts: list[str], generator: torch.Generator
+    ) -> list[Image]:
         latents = self._generate_initial_noise(len(prompts), generator)
 
         # for i, img in enumerate(self._get_images(latents)):
@@ -108,16 +110,22 @@ class ImageGenerator:
             torch_dtype=self.dtype,
         ).to(self.device)
 
-        pipe.scheduler = scheduler.from_config(pipe.scheduler.config)
-        pipe.scheduler.set_timesteps(self.num_steps)
-        pipe.scheduler.timesteps.to(self.device)
+        pipe.scheduler = scheduler.from_pretrained(model, subfolder="scheduler")
+
+        # pipe.scheduler = scheduler.from_config(pipe.scheduler.config)
+        # pipe.scheduler.set_timesteps(self.num_steps)
+        # pipe.scheduler.timesteps.to(self.device)
 
         return pipe
 
-    def _generate_initial_noise(self, batch_size: int, generator: torch.Generator) -> torch.Tensor:
+    def _generate_initial_noise(
+        self, batch_size: int, generator: torch.Generator
+    ) -> torch.Tensor:
         output_shape = (batch_size, *self.latent_shape)
         assert len(output_shape) == 4
-        return torch.randn(output_shape, device=self.device, dtype=self.dtype, generator=generator)
+        return torch.randn(
+            output_shape, device=self.device, dtype=self.dtype, generator=generator
+        )
 
     def _denoise(self, prompts: list[str], latents: torch.Tensor) -> list:
         with torch.no_grad():
@@ -134,8 +142,8 @@ class ImageGenerator:
 
     def _renoise(self, image_latents) -> list:
         curr_scheduler = self.pipe.scheduler
-        self.pipe.scheduler = self.inverse_scheduler.from_config(
-            self.pipe.scheduler.config
+        self.pipe.scheduler = self.inverse_scheduler.from_pretrained(
+            self.model, subfolder="scheduler"
         )
 
         with torch.no_grad():
@@ -202,7 +210,6 @@ class TreeRingImageGenerator(ImageGenerator):
         tree_ring_hyperparams: dict[str, any] = {
             "type": "rings",
             "radius": 10,
-            "p_val_thresh": 0.01,
         },
     ):
         super().__init__(
@@ -214,12 +221,11 @@ class TreeRingImageGenerator(ImageGenerator):
 
         self.type = tree_ring_hyperparams.get("type", "rings")
         self.radius = tree_ring_hyperparams.get("radius", 10)
-        self.p_val_thresh = tree_ring_hyperparams.get("p_val_thresh", 0.01)
 
     def generate_watermarked_images(
-        self, prompts: list[str], generator: torch.Generator
+        self, prompts: list[str], rng_generator: Optional[torch.Generator] = None
     ) -> tuple[list[Image], list[torch.Tensor], list[torch.Tensor]]:
-        latents = self._generate_initial_noise(len(prompts), generator)
+        latents = self._generate_initial_noise(len(prompts), rng_generator)
 
         keys = []
         masks = []
@@ -245,14 +251,18 @@ class TreeRingImageGenerator(ImageGenerator):
         return imgs.images, keys, masks
 
     def detect(
-        self, images: list[Image], keys: list[torch.Tensor], masks: list[torch.Tensor]
+        self,
+        images: list[Image],
+        keys: list[torch.Tensor],
+        masks: list[torch.Tensor],
+        p_val_thresh: float = 0.01,
     ) -> list[bool]:
         latents = self.renoise_images(images)
 
         results = []
         for i in range(len(images)):
             results.append(
-                detect(latents[i], keys[i], masks[i], p_val_thresh=self.p_val_thresh)
+                detect(latents[i], keys[i], masks[i], p_val_thresh=p_val_thresh)
             )
         return results
 
@@ -268,14 +278,18 @@ if __name__ == "__main__":
         "A blue wailmer pokemon in the sea",
     ]
 
-    generator = TreeRingImageGenerator(model="stabilityai/stable-diffusion-2", hyperparams={"resolution": 512, "denoise_guidance_scale": 7.5})
+    generator = TreeRingImageGenerator(
+        model="stabilityai/stable-diffusion-2",
+        hyperparams={"resolution": 512, "denoise_guidance_scale": 7.5},
+    )
 
     for prompt in prompts:
         rng_generator = torch.cuda.manual_seed(123)
         images = generator.generate_images([prompt], rng_generator)
 
-        rng_generator = torch.cuda.manual_seed(123)
-        watermarked_images, keys, masks = generator.generate_watermarked_images([prompt], rng_generator)
-        
+        watermarked_images, keys, masks = generator.generate_watermarked_images(
+            [prompt], seed=123
+        )
+
         print(generator.detect(images, keys, masks))
         print(generator.detect(watermarked_images, keys, masks))
