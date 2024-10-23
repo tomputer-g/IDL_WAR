@@ -9,3 +9,4 @@ scipy
 matplotlib
 datasets
 scikit-learn
+pytorch_fid

@@ -1,18 +1,15 @@
+import hashlib
 import os
 import shutil
-from datasets import load_dataset
-from PIL import ImageFilter
-from sklearn.metrics import roc_auc_score
 
+import torch
+from datasets import load_dataset
+# import click
+from image_generators import TreeRingImageGenerator
+from PIL import ImageFilter
 from utils import visualize_tensor
 from watermark import fft
 
-import torch
-
-# import click
-from image_generators import TreeRingImageGenerator
-
-import hashlib
 
 def get_unique_seed(i):
     i_str = str(i)
@@ -69,10 +66,8 @@ def main(
         os.mkdir(os.path.join(output_folder, "masks"))
         os.mkdir(os.path.join(output_folder, "captions"))
 
-    from diffusers import (
-        DPMSolverMultistepScheduler,
-        DPMSolverMultistepInverseScheduler,
-    )
+    from diffusers import (DPMSolverMultistepInverseScheduler,
+                           DPMSolverMultistepScheduler)
 
     generator = TreeRingImageGenerator(
         scheduler=DPMSolverMultistepScheduler,
