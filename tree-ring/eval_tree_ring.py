@@ -57,46 +57,23 @@ def eval_auc_and_tpr(
 
     probabilities = []
     true_labels = []
-    true_positive = 0
-    false_positive = 0
-    true_negative = 0
-    false_negative = 0
     for i, image in enumerate(images[:2]):
         unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
         watermarked = Image.open(os.path.join(watermarked_folder, image))
-
-        unwatermarked_lowest_p_val = 1.0
-        watermarked_lowest_p_val = 1.0
-
-        # for i in range(len(keys)):
-        unwatermarked_det = generator.detect(
+        
+        p_val, _ = generator.detect(
             [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-        )
-        if unwatermarked_det[0][0] < unwatermarked_lowest_p_val:
-            unwatermarked_lowest_p_val = unwatermarked_det[0][0]
+        )[0]
 
-        watermarked_det = generator.detect(
-            [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-        )
-        if watermarked_det[0][0] < watermarked_lowest_p_val:
-            watermarked_lowest_p_val = watermarked_det[0][0]
-
-        # p_vals.append(1 - unwatermarked_det[0][0])
-        # print(unwatermarked_det[0][0])
         true_labels.append(0)
-        probabilities.append(1 - unwatermarked_lowest_p_val)
-        if unwatermarked_lowest_p_val < 0.01:
-            false_positive += 1
-        else:
-            true_negative += 1
+        probabilities.append(1 - p_val)
 
-        # p_vals.append(1 - watermarked_det[0][0])
+        p_val, _ = generator.detect(
+            [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
+        )[0]
+
         true_labels.append(1)
-        probabilities.append(1 - watermarked_lowest_p_val)
-        if watermarked_lowest_p_val < 0.01:
-            true_positive += 1
-        else:
-            false_negative += 1
+        probabilities.append(1 - p_val)
 
     fpr, tpr, _ = roc_curve(true_labels, probabilities)
     auc_val = auc(fpr, tpr)
@@ -182,9 +159,9 @@ def main(
         images, watermarked_folder
     )
 
-    # unwatermarked_fid, watermarked_fid = eval_fid(
-    #     gt_temp_resized, unwatermarked_temp_resized, watermarked_temp_resized
-    # )
+    unwatermarked_fid, watermarked_fid = eval_fid(
+        gt_temp_resized, unwatermarked_temp_resized, watermarked_temp_resized
+    )
 
     delete_temp_folder(gt_temp_resized)
     delete_temp_folder(unwatermarked_temp_resized)
