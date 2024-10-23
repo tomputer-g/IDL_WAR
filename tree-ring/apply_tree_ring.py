@@ -89,11 +89,15 @@ def main(
         with_gt_id=True,
     )
 
+    with open(os.path.join(output_folder, "processed.txt"), mode="r") as f:
+        processed = set([line.strip() for line in f.readlines()])
+        print(processed)
+
     unwatermarked_images, watermarked_images, keys, masks = [], [], [], []
     for i, caption in enumerate(captions):
         gt_id = os.path.basename(gt_ids[i])
 
-        if resume and os.path.exists(os.path.join(output_folder, "watermarked", gt_id)):
+        if (resume and gt_id in processed):
             continue
 
         seed = get_unique_seed(i)
@@ -107,11 +111,11 @@ def main(
 
         image[0].save(os.path.join(output_folder, "watermarked", gt_id))
         torch.save(
-            keys[i],
+            key[0],
             os.path.join(output_folder, "keys", gt_id[:-4] + ".pt"),
         )
         torch.save(
-            masks[i],
+            mask[0],
             os.path.join(output_folder, "masks", gt_id[:-4] + ".pt"),
         )
 
@@ -123,6 +127,10 @@ def main(
 
         with open(os.path.join(output_folder, "captions", gt_id[:-4] + ".txt"), mode="w") as f:
             f.write(caption)
+        
+        with open(os.path.join(output_folder, "processed.txt"), mode="a") as f:
+            f.write(gt_id+"\n")
+        processed.add(gt_id)
 
 
 if __name__ == "__main__":
