@@ -11,7 +11,7 @@ def watermark(latent_tensor, type="rings", radius=10, device="cpu"):
 
     # generate key
     key, mask = generate_key(
-        size=latent_tensor.shape[-1], type=type, radius=radius, device=device
+        size=latent_tensor.shape[-1], type=type, radius=radius, device=device, dtype=fft_applied.dtype
     )
 
     # inject key
@@ -41,7 +41,7 @@ def ifft(fft_latent_tensor):
 
 
 # generate the 2D watermark key values
-def generate_key(size, type="rings", radius=10, device="cpu"):
+def generate_key(size, type="rings", radius=10, device="cpu", dtype=torch.complex64):
     height, width = size, size
 
     circle_mask = torch.zeros((height, width), dtype=bool, device=device)
@@ -60,7 +60,7 @@ def generate_key(size, type="rings", radius=10, device="cpu"):
 
     tensor_radius = torch.tensor([radius], device=device)
     circle_mask = distance_from_center_squared <= torch.square(tensor_radius)
-    key = torch.zeros_like(circle_mask, dtype=torch.complex64, device=device)
+    key = torch.zeros_like(circle_mask, dtype=dtype, device=device)
 
     match type:
         case "zeros":
@@ -101,6 +101,10 @@ def p_value(latent_tensor, key, mask):
 
     # extract bits corresponding to key
     key_from_latents = fft_applied[0, mask]  # assume key is 0th dim
+
+    # convert to larger dtype first so we don't get inf
+    key_from_latents = key_from_latents.type(torch.complex64)
+    key = key.type(torch.complex64)
 
     # calculate score
     variance = 1 / mask.sum() * torch.square(torch.abs(key_from_latents)).sum()

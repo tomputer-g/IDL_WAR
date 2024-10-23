@@ -49,15 +49,18 @@ def main(
     split=None,
     num_files_to_process=-1,
     apply_watermark=True,
+    resume=True
 ):
     """Generates watermarked/non-watermarked images"""
-    if os.path.exists(output_folder):
-        shutil.rmtree(output_folder)
-    os.mkdir(output_folder)
-    os.mkdir(os.path.join(output_folder, "watermarked"))
-    os.mkdir(os.path.join(output_folder, "unwatermarked"))
-    os.mkdir(os.path.join(output_folder, "keys"))
-    os.mkdir(os.path.join(output_folder, "masks"))
+    if not resume or not os.path.exists(output_folder):
+        if os.path.exists(output_folder):
+            shutil.rmtree(output_folder)
+        os.mkdir(output_folder)
+        os.mkdir(os.path.join(output_folder, "watermarked"))
+        os.mkdir(os.path.join(output_folder, "unwatermarked"))
+        os.mkdir(os.path.join(output_folder, "keys"))
+        os.mkdir(os.path.join(output_folder, "masks"))
+        os.mkdir(os.path.join(output_folder, "captions"))
 
     from diffusers import (
         DPMSolverMultistepScheduler,
@@ -67,7 +70,11 @@ def main(
     generator = TreeRingImageGenerator(
         scheduler=DPMSolverMultistepScheduler,
         inverse_scheduler=DPMSolverMultistepInverseScheduler,
+        hyperparams={
+            "half_precision": True,
+        }
     )
+
     captions, gt_ids = get_captions(
         hf_dataset,
         split=split,
@@ -77,10 +84,11 @@ def main(
 
     rng_generator = torch.cuda.manual_seed(0)
     unwatermarked_images, watermarked_images, keys, masks = [], [], [], []
-    true_positive = 0
-    false_positive = 0
     for i, caption in enumerate(captions):
         gt_id = os.path.basename(gt_ids[i])
+
+        if resume and os.path.exists(os.path.join(output_folder, "watermarked", gt_id)):
+            continue
 
         image, key, mask = generator.generate_watermarked_images(
             [caption], rng_generator=rng_generator
@@ -104,31 +112,9 @@ def main(
 
         image[0].save(os.path.join(output_folder, "unwatermarked", gt_id))
 
-    p_vals = []
-    true_labels = []
-    for i, watermarked, unwatermarked in zip(
-        range(len(watermarked_images)), watermarked_images, unwatermarked_images
-    ):
-        unwatermarked_det = generator.detect(
-            [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-        )
-        watermarked_det = generator.detect(
-            [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-        )
-
-        p_vals.append(1 - unwatermarked_det[0][0])
-        true_labels.append(0)
-
-        false_positive += 1 if unwatermarked_det[0][1] else 0
-
-        p_vals.append(1 - watermarked_det[0][0])
-        true_labels.append(1)
-
-        true_positive += 1 if watermarked_det[0][1] else 0
-
-    print(f"AUC: {roc_auc_score(true_labels, p_vals)}")
-    print(f"TPR: {true_positive / (true_positive + false_positive)}")
+        with open(os.path.join(output_folder, "captions", gt_id[:-4] + ".txt"), mode="w") as f:
+            f.write(caption)
 
 
 if __name__ == "__main__":
-    main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=5)
+    main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=-1, resume=True)

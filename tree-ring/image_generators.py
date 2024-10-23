@@ -173,6 +173,7 @@ class ImageGenerator:
         image_tensor = torch.stack(images).to(
             self.device
         )  # Create a batch by concatenating
+        image_tensor = image_tensor.type(self.dtype)
 
         if len(image_tensor.size()) < 4:
             image_tensor = image_tensor.unsqueeze(0)
