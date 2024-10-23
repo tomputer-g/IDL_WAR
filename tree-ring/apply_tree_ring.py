@@ -12,6 +12,13 @@ import torch
 # import click
 from image_generators import TreeRingImageGenerator
 
+import hashlib
+
+def get_unique_seed(i):
+    i_str = str(i)
+    hash_object = hashlib.sha256(i_str.encode())
+    seed = int(hash_object.hexdigest(), 16) % (2**32-1)
+    return seed
 
 def get_captions(hf_dataset, split=None, num_files_to_process=-1, with_gt_id=False):
     ds = load_dataset(hf_dataset, split=split)
@@ -82,7 +89,6 @@ def main(
         with_gt_id=True,
     )
 
-    rng_generator = torch.cuda.manual_seed(0)
     unwatermarked_images, watermarked_images, keys, masks = [], [], [], []
     for i, caption in enumerate(captions):
         gt_id = os.path.basename(gt_ids[i])
@@ -90,6 +96,8 @@ def main(
         if resume and os.path.exists(os.path.join(output_folder, "watermarked", gt_id)):
             continue
 
+        seed = get_unique_seed(i)
+        rng_generator = torch.cuda.manual_seed(seed)
         image, key, mask = generator.generate_watermarked_images(
             [caption], rng_generator=rng_generator
         )
@@ -107,6 +115,7 @@ def main(
             os.path.join(output_folder, "masks", gt_id[:-4] + ".pt"),
         )
 
+        rng_generator = torch.cuda.manual_seed(seed)
         image = generator.generate_images([caption], rng_generator=rng_generator)
         unwatermarked_images.append(image[0])
 
