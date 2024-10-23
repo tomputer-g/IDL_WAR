@@ -136,7 +136,7 @@ def main(
         [image[:-4] + ".pt" for image in images], masks_folder
     )
 
-    # load keys/masks + prune broken keys/masks
+    # load keys/masks + prune broken keys/masks/images
     keys = []
     masks = []
     for image in images[:]:
@@ -151,6 +151,14 @@ def main(
             mask = torch.load(os.path.join(masks_temp, image[:-4] + ".pt"), weights_only=True)
         except EOFError:
             print(f"{image} has a broken key file. Please regenerate.")
+            images.remove(image)
+            continue
+
+        try:
+            Image.open(os.path.join(unwatermarked_temp, image))
+            Image.open(os.path.join(watermarked_temp, image))
+        except UnidentifiedImageError:
+            print(f"{image} has a broken image file. Please regenerate.")
             images.remove(image)
             continue
 
