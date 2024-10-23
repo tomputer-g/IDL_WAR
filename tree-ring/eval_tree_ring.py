@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import shutil
 
@@ -5,7 +6,7 @@ import torch
 from diffusers import (DPMSolverMultistepInverseScheduler,
                        DPMSolverMultistepScheduler)
 from image_generators import TreeRingImageGenerator
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pytorch_fid.fid_score import calculate_fid_given_paths
 from sklearn.metrics import auc, roc_curve
 
@@ -22,6 +23,13 @@ def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
         )
     return temp_folder
 
+def copy_resized(img_path, size, img_dest):
+    try:
+        with Image.open(img_path) as img:
+            resized_img = img.resize((size, size))
+            resized_img.save(img_dest)
+    except UnidentifiedImageError:
+        print(f"{os.path.basename(img_path)} has a broken image file. Please regenerate.")
 
 def copy_to_temp_folder_with_resize(
     images: list[str], original_folder: str, size=299
@@ -31,11 +39,14 @@ def copy_to_temp_folder_with_resize(
         shutil.rmtree(temp_folder)
     os.mkdir(temp_folder)
 
-    for image in images:
-        img_path = os.path.join(original_folder, image)
-        with Image.open(img_path) as img:
-            resized_img = img.resize((size, size))
-            resized_img.save(os.path.join(temp_folder, image))
+    jobs = [(
+        os.path.join(original_folder, image),
+        size,
+        os.path.join(temp_folder, image)
+    ) for image in images]
+    
+    with multiprocessing.Pool() as p:
+        p.starmap(copy_resized, jobs)
 
     return temp_folder
 
@@ -58,8 +69,12 @@ def eval_auc_and_tpr(
     probabilities = []
     true_labels = []
     for i, image in enumerate(images[:2]):
-        unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
-        watermarked = Image.open(os.path.join(watermarked_folder, image))
+        try:
+            unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
+            watermarked = Image.open(os.path.join(watermarked_folder, image))
+        except UnidentifiedImageError:
+            print(f"{image} has a broken key file. Please regenerate.")
+            continue
         
         p_val, _ = generator.detect(
             [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
@@ -121,6 +136,7 @@ def main(
         [image[:-4] + ".pt" for image in images], masks_folder
     )
 
+    # load keys/masks + prune broken keys/masks
     keys = []
     masks = []
     for image in images[:]:
