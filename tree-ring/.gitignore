@@ -1,3 +1,6 @@
 outputs/
 val2017/
-val2017.zip
+**/*.zip
+eval_probs.csv
+temp_*/
+outputs*/

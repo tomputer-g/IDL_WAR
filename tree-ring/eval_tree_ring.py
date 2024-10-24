@@ -23,13 +23,17 @@ def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
         )
     return temp_folder
 
+
 def copy_resized(img_path, size, img_dest):
     try:
         with Image.open(img_path) as img:
             resized_img = img.resize((size, size))
             resized_img.save(img_dest)
     except UnidentifiedImageError:
-        print(f"{os.path.basename(img_path)} has a broken image file. Please regenerate.")
+        print(
+            f"{os.path.basename(img_path)} has a broken image file. Please regenerate."
+        )
+
 
 def copy_to_temp_folder_with_resize(
     images: list[str], original_folder: str, size=299
@@ -39,12 +43,11 @@ def copy_to_temp_folder_with_resize(
         shutil.rmtree(temp_folder)
     os.mkdir(temp_folder)
 
-    jobs = [(
-        os.path.join(original_folder, image),
-        size,
-        os.path.join(temp_folder, image)
-    ) for image in images]
-    
+    jobs = [
+        (os.path.join(original_folder, image), size, os.path.join(temp_folder, image))
+        for image in images
+    ]
+
     with multiprocessing.Pool() as p:
         p.starmap(copy_resized, jobs)
 
@@ -56,7 +59,14 @@ def delete_temp_folder(temp_folder: str):
 
 
 def eval_auc_and_tpr(
-    images, unwatermarked_folder, watermarked_folder, keys, masks, fpr_target=0.01
+    images,
+    unwatermarked_folder,
+    watermarked_folder,
+    keys,
+    masks,
+    fpr_target=0.01,
+    precalculated_data_file="eval_probs.csv",
+    new_data_file="eval_probs.csv",
 ):
     generator = TreeRingImageGenerator(
         scheduler=DPMSolverMultistepScheduler,
@@ -68,27 +78,57 @@ def eval_auc_and_tpr(
 
     probabilities = []
     true_labels = []
-    for i, image in enumerate(images):
-        try:
-            unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
-            watermarked = Image.open(os.path.join(watermarked_folder, image))
-        except UnidentifiedImageError:
-            print(f"{image} has a broken key file. Please regenerate.")
-            continue
-        
-        p_val, _ = generator.detect(
-            [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-        )[0]
 
-        true_labels.append(0)
+    if precalculated_data_file is not None and os.path.exists(precalculated_data_file):
+        with open(precalculated_data_file, mode="r") as f:
+            precalculated_data = {
+                (
+                    line.split(",")[0],  # image label
+                    line.split(",")[1],  # "watermarked" or "unwatermarked"
+                ): (
+                    int(line.split(",")[2]),  # true_label
+                    float(line.split(",")[3].strip()),  # p_val
+                )
+                for line in f
+            }
+    else:
+        precalculated_data = {}
+
+    for true_label, p_val in precalculated_data.values():
         probabilities.append(1 - p_val)
+        true_labels.append(true_label)
 
-        p_val, _ = generator.detect(
-            [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-        )[0]
+    # for i, image in enumerate(images):
+    #     try:
+    #         unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
+    #         watermarked = Image.open(os.path.join(watermarked_folder, image))
+    #     except UnidentifiedImageError:
+    #         print(f"{image} has a broken key file. Please regenerate.")
+    #         continue
 
-        true_labels.append(1)
-        probabilities.append(1 - p_val)
+    #     if (image, "unwatermarked") not in precalculated_data:
+    #         p_val, _ = generator.detect(
+    #             [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
+    #         )[0]
+    #         watermarked_prob = 1 - p_val
+
+    #         true_labels.append(0)
+    #         probabilities.append(watermarked_prob)
+
+    #         with open(new_data_file, mode="a") as f:
+    #             f.write(f"{image},unwatermarked,{0},{p_val}\n")
+
+    #     if (image, "watermarked") not in precalculated_data:
+    #         p_val, _ = generator.detect(
+    #             [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
+    #         )[0]
+    #         watermarked_prob = 1 - p_val
+
+    #         true_labels.append(1)
+    #         probabilities.append(watermarked_prob)
+
+    #         with open(new_data_file, mode="a") as f:
+    #             f.write(f"{image},watermarked,{1},{p_val}\n")
 
     fpr, tpr, _ = roc_curve(true_labels, probabilities)
     auc_val = auc(fpr, tpr)
@@ -141,14 +181,18 @@ def main(
     masks = []
     for image in images[:]:
         try:
-            key = torch.load(os.path.join(keys_temp, image[:-4] + ".pt"), weights_only=True)
+            key = torch.load(
+                os.path.join(keys_temp, image[:-4] + ".pt"), weights_only=True
+            )
         except EOFError:
             print(f"{image} has a broken key file. Please regenerate.")
             images.remove(image)
             continue
 
         try:
-            mask = torch.load(os.path.join(masks_temp, image[:-4] + ".pt"), weights_only=True)
+            mask = torch.load(
+                os.path.join(masks_temp, image[:-4] + ".pt"), weights_only=True
+            )
         except EOFError:
             print(f"{image} has a broken key file. Please regenerate.")
             images.remove(image)
