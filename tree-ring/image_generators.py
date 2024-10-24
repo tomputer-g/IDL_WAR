@@ -182,14 +182,14 @@ class ImageGenerator:
 
     def _get_latents(self, images: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
-            latents = self.pipe.vae.encode(images).latent_dist.sample()
+            latents = self.pipe.vae.encode(images).latent_dist.mode()
             latents = latents * 0.18215
 
         return latents
 
     def _get_images(self, latents: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
-            images = self.pipe.vae.decode(latents / 0.18215).sample
+            images = self.pipe.vae.decode(latents / 0.18215).mode
             images = (images / 2 + 0.5).clamp(0, 1)
         return images
 
