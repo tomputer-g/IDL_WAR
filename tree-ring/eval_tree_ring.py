@@ -98,37 +98,37 @@ def eval_auc_and_tpr(
         probabilities.append(1 - p_val)
         true_labels.append(true_label)
 
-    # for i, image in enumerate(images):
-    #     try:
-    #         unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
-    #         watermarked = Image.open(os.path.join(watermarked_folder, image))
-    #     except UnidentifiedImageError:
-    #         print(f"{image} has a broken key file. Please regenerate.")
-    #         continue
+    for i, image in enumerate(images):
+        try:
+            unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
+            watermarked = Image.open(os.path.join(watermarked_folder, image))
+        except UnidentifiedImageError:
+            print(f"{image} has a broken key file. Please regenerate.")
+            continue
 
-    #     if (image, "unwatermarked") not in precalculated_data:
-    #         p_val, _ = generator.detect(
-    #             [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-    #         )[0]
-    #         watermarked_prob = 1 - p_val
+        if (image, "unwatermarked") not in precalculated_data:
+            p_val, _ = generator.detect(
+                [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
+            )[0]
+            watermarked_prob = 1 - p_val
 
-    #         true_labels.append(0)
-    #         probabilities.append(watermarked_prob)
+            true_labels.append(0)
+            probabilities.append(watermarked_prob)
 
-    #         with open(new_data_file, mode="a") as f:
-    #             f.write(f"{image},unwatermarked,{0},{p_val}\n")
+            with open(new_data_file, mode="a") as f:
+                f.write(f"{image},unwatermarked,{0},{p_val}\n")
 
-    #     if (image, "watermarked") not in precalculated_data:
-    #         p_val, _ = generator.detect(
-    #             [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
-    #         )[0]
-    #         watermarked_prob = 1 - p_val
+        if (image, "watermarked") not in precalculated_data:
+            p_val, _ = generator.detect(
+                [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
+            )[0]
+            watermarked_prob = 1 - p_val
 
-    #         true_labels.append(1)
-    #         probabilities.append(watermarked_prob)
+            true_labels.append(1)
+            probabilities.append(watermarked_prob)
 
-    #         with open(new_data_file, mode="a") as f:
-    #             f.write(f"{image},watermarked,{1},{p_val}\n")
+            with open(new_data_file, mode="a") as f:
+                f.write(f"{image},watermarked,{1},{p_val}\n")
 
     fpr, tpr, _ = roc_curve(true_labels, probabilities)
     auc_val = auc(fpr, tpr)
