@@ -68,7 +68,7 @@ def eval_auc_and_tpr(
 
     probabilities = []
     true_labels = []
-    for i, image in enumerate(images[:2]):
+    for i, image in enumerate(images):
         try:
             unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
             watermarked = Image.open(os.path.join(watermarked_folder, image))

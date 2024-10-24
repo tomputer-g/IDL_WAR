@@ -86,7 +86,6 @@ def main(
 
     with open(os.path.join(output_folder, "processed.txt"), mode="r") as f:
         processed = set([line.strip() for line in f.readlines()])
-        print(processed)
 
     unwatermarked_images, watermarked_images, keys, masks = [], [], [], []
     for i, caption in enumerate(captions):
