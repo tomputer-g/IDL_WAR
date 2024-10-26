@@ -94,6 +94,18 @@ def generate_key(size, type="rings", radius=10, device="cpu", dtype=torch.comple
 
     return key, circle_mask
 
+def extract_key(latent_tensor, mask):
+    # apply fft
+    fft_applied = fft(latent_tensor)
+
+    # extract bits corresponding to key
+    key_from_latents = fft_applied[0, mask]  # assume key is 0th dim
+
+    # convert to larger dtype first so we don't get inf
+    key_from_latents = key_from_latents.type(torch.complex64)
+
+    return key_from_latents
+
 
 def p_value(latent_tensor, key, mask):
     # apply fft
