@@ -1,6 +1,7 @@
 outputs/
 val2017/
 **/*.zip
-eval_probs.csv
+**/*.csv
 temp_*/
 outputs*/
+reversed_latents/
