@@ -84,8 +84,11 @@ def main(
         with_gt_id=True,
     )
 
-    with open(os.path.join(output_folder, "processed.txt"), mode="r") as f:
-        processed = set([line.strip() for line in f.readlines()])
+    if os.path.exists(os.path.join(output_folder, "processed.txt")):
+        with open(os.path.join(output_folder, "processed.txt"), mode="r") as f:
+            processed = set([line.strip() for line in f.readlines()])
+    else:
+        processed = set()
 
     unwatermarked_images, watermarked_images, keys, masks = [], [], [], []
     for i, caption in enumerate(captions):
@@ -128,4 +131,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=-1, resume=True)
+    main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=1000, resume=True)
