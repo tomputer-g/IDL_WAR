@@ -5,7 +5,7 @@ from diffusers import DDIMScheduler, DDIMInverseScheduler
 from typing import Optional
 from PIL.Image import Image
 
-from watermark import watermark, detect
+from watermark import watermark, detect, extract_key
 
 
 class ImageGenerator:
@@ -264,6 +264,16 @@ class TreeRingImageGenerator(ImageGenerator):
         for i in range(len(images)):
             results.append(
                 detect(latents[i], keys[i], masks[i], p_val_thresh=p_val_thresh)
+            )
+        return results
+    
+    def extract_key(self, images: list[Image], masks: list[torch.Tensor]) -> list[torch.Tensor]:
+        latents = self.renoise_images(images)
+
+        results = []
+        for i in range(len(images)):
+            results.append(
+                extract_key(latents[i], masks[i])
             )
         return results
 
