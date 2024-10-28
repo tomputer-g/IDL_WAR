@@ -1,3 +1,6 @@
+# adversarial checkpoint
+adversarial_attack/surrogate_models/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
