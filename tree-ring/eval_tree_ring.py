@@ -2,13 +2,15 @@ import multiprocessing
 import os
 import shutil
 
+import numpy as np
 import torch
 from diffusers import (DPMSolverMultistepInverseScheduler,
                        DPMSolverMultistepScheduler)
-from image_generators import TreeRingImageGenerator
 from PIL import Image, UnidentifiedImageError
 from pytorch_fid.fid_score import calculate_fid_given_paths
 from sklearn.metrics import auc, roc_curve
+
+from image_generators import TreeRingImageGenerator
 
 
 def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
