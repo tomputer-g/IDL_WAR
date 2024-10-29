@@ -108,7 +108,7 @@ def eval_auc_and_tpr(
 
         if (image, "unwatermarked") not in precalculated_data:
             p_val, _ = generator.detect(
-                [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
+                [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=fpr_target
             )[0]
             watermarked_prob = 1 - p_val
 
@@ -120,7 +120,7 @@ def eval_auc_and_tpr(
 
         if (image, "watermarked") not in precalculated_data:
             p_val, _ = generator.detect(
-                [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=0.01
+                [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=fpr_target
             )[0]
             watermarked_prob = 1 - p_val
 
@@ -132,7 +132,7 @@ def eval_auc_and_tpr(
 
     fpr, tpr, _ = roc_curve(true_labels, probabilities)
     auc_val = auc(fpr, tpr)
-    tpr_at_fpr = tpr[next(i for i, x in enumerate(fpr) if x >= fpr_target)]
+    tpr_at_fpr = tpr[np.where(fpr<fpr_target)[0][-1]]
 
     return auc_val, tpr_at_fpr
 
@@ -243,10 +243,10 @@ def main(
 
 if __name__ == "__main__":
     main(
-        "outputs/processed.txt",
+        "outputs_original/processed.txt",
         "val2017",
-        "outputs/unwatermarked",
-        "outputs/watermarked",
-        "outputs/keys",
-        "outputs/masks",
+        "outputs_original/unwatermarked",
+        "outputs_original/watermarked",
+        "outputs_original/keys",
+        "outputs_original/masks",
     )
