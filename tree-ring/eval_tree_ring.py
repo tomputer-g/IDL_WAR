@@ -26,9 +26,11 @@ def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
     return temp_folder
 
 
-def copy_resized(img_path, size, img_dest):
+def copy_resized(img_path, size, img_dest, attack=None):
     try:
         with Image.open(img_path) as img:
+            if attack is not None:
+                img = attack(img)
             resized_img = img.resize((size, size))
             resized_img.save(img_dest)
     except UnidentifiedImageError:
@@ -38,7 +40,7 @@ def copy_resized(img_path, size, img_dest):
 
 
 def copy_to_temp_folder_with_resize(
-    images: list[str], original_folder: str, size=299
+    images: list[str], original_folder: str, size=299, attack=None
 ) -> str:
     temp_folder = "temp_resized_" + os.path.basename(original_folder)
     if os.path.exists(temp_folder):
@@ -46,7 +48,7 @@ def copy_to_temp_folder_with_resize(
     os.mkdir(temp_folder)
 
     jobs = [
-        (os.path.join(original_folder, image), size, os.path.join(temp_folder, image))
+        (os.path.join(original_folder, image), size, os.path.join(temp_folder, image), attack)
         for image in images
     ]
 
@@ -67,8 +69,16 @@ def eval_auc_and_tpr(
     keys,
     masks,
     fpr_target=0.01,
-    precalculated_data_file="eval_probs.csv",
-    new_data_file="eval_probs.csv",
+    precalculated_data_files={
+        "unwatermarked": "eval_probs_unwatermarked.csv",
+        "watermarked": "eval_probs_watermarked.csv"    
+    },
+    new_data_files={
+        "unwatermarked": "eval_probs_unwatermarked.csv",
+        "watermarked": "eval_probs_watermarked.csv",
+        "combined": "eval_probs.csv",  
+    },
+    attack=None,
 ):
     generator = TreeRingImageGenerator(
         scheduler=DPMSolverMultistepScheduler,
@@ -81,9 +91,10 @@ def eval_auc_and_tpr(
     probabilities = []
     true_labels = []
 
-    if precalculated_data_file is not None and os.path.exists(precalculated_data_file):
+    precalculated_data = []
+    for precalculated_data_file in precalculated_data_files.values():
         with open(precalculated_data_file, mode="r") as f:
-            precalculated_data = {
+            precalculated_data.update({
                 (
                     line.split(",")[0],  # image label
                     line.split(",")[1],  # "watermarked" or "unwatermarked"
@@ -92,7 +103,7 @@ def eval_auc_and_tpr(
                     float(line.split(",")[3].strip()),  # p_val
                 )
                 for line in f
-            }
+            })
     else:
         precalculated_data = {}
 
@@ -104,8 +115,13 @@ def eval_auc_and_tpr(
         try:
             unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
             watermarked = Image.open(os.path.join(watermarked_folder, image))
+
+            if attack is not None:
+                unwatermarked = attack(unwatermarked)
+                watermarked = attack(watermarked)
+
         except UnidentifiedImageError:
-            print(f"{image} has a broken key file. Please regenerate.")
+            print(f"{image} has a broken image file. Please regenerate.")
             continue
 
         if (image, "unwatermarked") not in precalculated_data:
@@ -117,7 +133,9 @@ def eval_auc_and_tpr(
             true_labels.append(0)
             probabilities.append(watermarked_prob)
 
-            with open(new_data_file, mode="a") as f:
+            with open(new_data_files["unwatermarked"], mode="a") as f:
+                f.write(f"{image},unwatermarked,{0},{p_val}\n")
+            with open(new_data_files["combined"], mode="a") as f:
                 f.write(f"{image},unwatermarked,{0},{p_val}\n")
 
         if (image, "watermarked") not in precalculated_data:
@@ -129,7 +147,9 @@ def eval_auc_and_tpr(
             true_labels.append(1)
             probabilities.append(watermarked_prob)
 
-            with open(new_data_file, mode="a") as f:
+            with open(new_data_files["watermarked"], mode="a") as f:
+                f.write(f"{image},watermarked,{1},{p_val}\n")
+            with open(new_data_files["combined"], mode="a") as f:
                 f.write(f"{image},watermarked,{1},{p_val}\n")
 
     fpr, tpr, _ = roc_curve(true_labels, probabilities)
@@ -164,6 +184,7 @@ def main(
     watermarked_folder,
     keys_folder,
     masks_folder,
+    attack=None,
 ):
     with open(processed_file, mode="r") as f:
         images = [line.strip() for line in f.readlines()]
@@ -212,7 +233,7 @@ def main(
         masks.append(mask)
 
     auc_val, tpr = eval_auc_and_tpr(
-        images, unwatermarked_temp, watermarked_temp, keys, masks
+        images, unwatermarked_temp, watermarked_temp, keys, masks, attack=attack
     )
 
     delete_temp_folder(gt_temp)
@@ -221,12 +242,12 @@ def main(
     delete_temp_folder(keys_temp)
     delete_temp_folder(masks_temp)
 
-    gt_temp_resized = copy_to_temp_folder_with_resize(images, gt_folder)
+    gt_temp_resized = copy_to_temp_folder_with_resize(images, gt_folder, attack=attack)
     unwatermarked_temp_resized = copy_to_temp_folder_with_resize(
         images, unwatermarked_folder
     )
     watermarked_temp_resized = copy_to_temp_folder_with_resize(
-        images, watermarked_folder
+        images, watermarked_folder, attack=attack
     )
 
     unwatermarked_fid, watermarked_fid = eval_fid(
