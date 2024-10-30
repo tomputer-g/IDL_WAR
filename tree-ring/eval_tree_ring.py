@@ -91,8 +91,11 @@ def eval_auc_and_tpr(
     probabilities = []
     true_labels = []
 
-    precalculated_data = []
+    precalculated_data = {}
     for precalculated_data_file in precalculated_data_files.values():
+        if not os.path.exists(precalculated_data_file):
+            continue
+
         with open(precalculated_data_file, mode="r") as f:
             precalculated_data.update({
                 (
@@ -265,6 +268,11 @@ def main(
 
 
 if __name__ == "__main__":
+    import PIL
+
+    rotation_angle = 75
+    attack = lambda img: img.rotate(rotation_angle)
+
     main(
         "outputs_original/processed.txt",
         "val2017",
@@ -272,4 +280,5 @@ if __name__ == "__main__":
         "outputs_original/watermarked",
         "outputs_original/keys",
         "outputs_original/masks",
+        attack=attack
     )
