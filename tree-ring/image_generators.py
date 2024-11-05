@@ -123,8 +123,18 @@ class ImageGenerator:
     ) -> torch.Tensor:
         output_shape = (batch_size, *self.latent_shape)
         assert len(output_shape) == 4
-        return torch.randn(
-            output_shape, device=self.device, dtype=self.dtype, generator=generator
+        # return torch.randn(
+        #     output_shape, device=self.device, dtype=self.dtype, generator=generator
+        # ) * 0.18215
+
+        return self.pipe.prepare_latents(
+            batch_size,
+            self.latent_shape[0],
+            512,
+            512,
+            self.dtype,
+            self.device,
+            generator
         )
 
     def _denoise(self, prompts: list[str], latents: torch.Tensor) -> list:
@@ -232,6 +242,7 @@ class TreeRingImageGenerator(ImageGenerator):
         masks = []
         for i in range(latents.shape[0]):
             tensor = latents[i]
+            print(tensor.shape)
             assert tensor.shape == self.latent_shape
 
             tensor, key, mask = watermark(

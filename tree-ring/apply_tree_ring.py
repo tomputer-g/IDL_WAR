@@ -53,6 +53,7 @@ def main(
     split=None,
     num_files_to_process=-1,
     apply_watermark=True,
+    channel=0,
     resume=True
 ):
     """Generates watermarked/non-watermarked images"""
@@ -66,12 +67,23 @@ def main(
         os.mkdir(os.path.join(output_folder, "masks"))
         os.mkdir(os.path.join(output_folder, "captions"))
 
-    from diffusers import (DPMSolverMultistepInverseScheduler,
-                           DPMSolverMultistepScheduler)
+    # from diffusers import (DPMSolverMultistepInverseScheduler,
+    #                        DPMSolverMultistepScheduler)
+    from diffusers import (DDIMScheduler, DDIMInverseScheduler)
+
+    # generator = TreeRingImageGenerator(
+    #     model="stabilityai/stable-diffusion-2-1-base"
+    #     scheduler=DPMSolverMultistepScheduler,
+    #     inverse_scheduler=DPMSolverMultistepInverseScheduler,
+    #     hyperparams={
+    #         "half_precision": True,
+    #     }
+    # )
 
     generator = TreeRingImageGenerator(
-        scheduler=DPMSolverMultistepScheduler,
-        inverse_scheduler=DPMSolverMultistepInverseScheduler,
+        model="stabilityai/stable-diffusion-2-1-base",
+        scheduler=DDIMScheduler,
+        inverse_scheduler=DDIMInverseScheduler,
         hyperparams={
             "half_precision": True,
         }

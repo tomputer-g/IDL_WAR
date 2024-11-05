@@ -5,7 +5,7 @@ from utils import visualize_tensor
 
 
 # add watermark to noise, returns key
-def watermark(latent_tensor, type="rings", radius=10, device="cpu"):
+def watermark(latent_tensor, type="rings", radius=10, device="cpu", channel=0):
     # apply fft
     fft_applied = fft(latent_tensor)
 
@@ -15,11 +15,11 @@ def watermark(latent_tensor, type="rings", radius=10, device="cpu"):
     )
 
     # inject key
-    fft_applied[0, mask] = key[mask]
+    fft_applied[channel, mask] = key[mask]
 
     # useful code for debugging if injected key is reasonable
-    # visualize_tensor(fft_applied.real, name="real.png")
-    # visualize_tensor(fft_applied.imag, name="imag.png")
+    visualize_tensor(fft_applied.real, name="real.png")
+    visualize_tensor(fft_applied.imag, name="imag.png")
 
     # reverse fft
     latent_tensor = ifft(fft_applied).real
@@ -107,12 +107,16 @@ def extract_key(latent_tensor, mask):
     return key_from_latents
 
 
-def p_value(latent_tensor, key, mask):
+def p_value(latent_tensor, key, mask, channel=0):
     # apply fft
     fft_applied = fft(latent_tensor)
 
+    # useful code for debugging if injected key is reasonable
+    visualize_tensor(fft_applied.real, name="renoised_real.png")
+    visualize_tensor(fft_applied.imag, name="renoised_imag.png")
+
     # extract bits corresponding to key
-    key_from_latents = fft_applied[0, mask]  # assume key is 0th dim
+    key_from_latents = fft_applied[channel, mask]
 
     # convert to larger dtype first so we don't get inf
     key_from_latents = key_from_latents.type(torch.complex64)

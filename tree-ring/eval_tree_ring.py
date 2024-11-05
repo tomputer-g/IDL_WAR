@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from diffusers import (DPMSolverMultistepInverseScheduler,
                        DPMSolverMultistepScheduler)
+from diffusers import (DDIMScheduler, DDIMInverseScheduler)
 from PIL import Image, UnidentifiedImageError
 from pytorch_fid.fid_score import calculate_fid_given_paths
 from sklearn.metrics import auc, roc_curve
@@ -80,12 +81,21 @@ def eval_auc_and_tpr(
     },
     attack=None,
 ):
+    # generator = TreeRingImageGenerator(
+    #     scheduler=DPMSolverMultistepScheduler,
+    #     inverse_scheduler=DPMSolverMultistepInverseScheduler,
+    #     hyperparams={
+    #         "half_precision": True,
+    #     },
+    # )
+
     generator = TreeRingImageGenerator(
-        scheduler=DPMSolverMultistepScheduler,
-        inverse_scheduler=DPMSolverMultistepInverseScheduler,
+        model="stabilityai/stable-diffusion-2-1-base",
+        scheduler=DDIMScheduler,
+        inverse_scheduler=DDIMInverseScheduler,
         hyperparams={
             "half_precision": True,
-        },
+        }
     )
 
     probabilities = []
@@ -107,8 +117,6 @@ def eval_auc_and_tpr(
                 )
                 for line in f
             })
-    else:
-        precalculated_data = {}
 
     for true_label, p_val in precalculated_data.values():
         probabilities.append(1 - p_val)
@@ -120,8 +128,10 @@ def eval_auc_and_tpr(
             watermarked = Image.open(os.path.join(watermarked_folder, image))
 
             if attack is not None:
+                watermarked.save("debug_unattacked.jpg")
                 unwatermarked = attack(unwatermarked)
                 watermarked = attack(watermarked)
+                watermarked.save("debug_attacked.jpg")
 
         except UnidentifiedImageError:
             print(f"{image} has a broken image file. Please regenerate.")
@@ -245,9 +255,9 @@ def main(
     delete_temp_folder(keys_temp)
     delete_temp_folder(masks_temp)
 
-    gt_temp_resized = copy_to_temp_folder_with_resize(images, gt_folder, attack=attack)
+    gt_temp_resized = copy_to_temp_folder_with_resize(images, gt_folder)
     unwatermarked_temp_resized = copy_to_temp_folder_with_resize(
-        images, unwatermarked_folder
+        images, unwatermarked_folder, attack=attack
     )
     watermarked_temp_resized = copy_to_temp_folder_with_resize(
         images, watermarked_folder, attack=attack
@@ -269,16 +279,20 @@ def main(
 
 if __name__ == "__main__":
     import PIL
+    from PIL import ImageFilter
+    import torch
+    import torchvision.transforms as T
 
-    rotation_angle = 75
-    attack = lambda img: img.rotate(rotation_angle)
+    def attack(img):
+        return img.rotate(75)
+        # return img.filter(ImageFilter.GaussianBlur(radius=4))
 
     main(
-        "outputs_original/processed.txt",
+        "outputs/processed.txt",
         "val2017",
-        "outputs_original/unwatermarked",
-        "outputs_original/watermarked",
-        "outputs_original/keys",
-        "outputs_original/masks",
+        "outputs/unwatermarked",
+        "outputs/watermarked",
+        "outputs/keys",
+        "outputs/masks",
         attack=attack
     )
