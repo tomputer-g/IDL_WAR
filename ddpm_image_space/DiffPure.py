@@ -99,15 +99,15 @@ class DiffPure():
             os.mkdir(os.path.join(output_dir+"_"+str(steps), "original"))
                 
 
-    def __call__(self, img):
+    def __call__(self, img, name):
         img_pured, img_noisy = self.runner.image_editing_sample((img.unsqueeze(0) - 0.5) * 2)
         img_noisy = (img_noisy.squeeze(0).to(img.dtype).to("cpu") + 1) / 2
         img_pured = (img_pured.squeeze(0).to(img.dtype).to("cpu") + 1) / 2
         if self.save_imgs:
             save_dir = f'{self.output_dir}_{self.steps}'
-            save_image(img, os.path.join(save_dir, "original", f'{self.cnt}.png'))
-            save_image(img_noisy, os.path.join(save_dir, "noisy", f'{self.cnt}.png'))
-            save_image(img_pured, os.path.join(save_dir, "pured", f'{self.cnt}.png'))
+            save_image(img, os.path.join(save_dir, "original", name))
+            save_image(img_noisy, os.path.join(save_dir, "noisy", name))
+            save_image(img_pured, os.path.join(save_dir, "pured", name))
             self.cnt += 1
         return img_pured
     
@@ -124,14 +124,14 @@ def main(image_folder, output_folder, resume=True):
             shutil.rmtree(output_folder)
         os.mkdir(output_folder)
 
-    for image in tqdm(images):
+    for image in tqdm(sorted(images)):
         if resume and os.path.exists(os.path.join(output_folder, image)):
             continue
         if image.split(".")[-1] == "txt":
             continue
         img = T.functional.pil_to_tensor(Image.open(os.path.join(image_folder, image)))
         img = img / 255.0
-        diff_attacker(img)
+        diff_attacker(img, image)
 
 if __name__=="__main__":
     main("../Neurips24_ETI_BeigeBox", "beigebox_results", resume=False)

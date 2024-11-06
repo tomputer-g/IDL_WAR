@@ -72,8 +72,7 @@ def attack(image, superresolve_final=True):
 
         downsampled_image = torchvision.transforms.functional.resize(image_expanded, size//downsample_factor)
         for i in range(2):
-            downsampled_image = diffusion_attack(downsampled_image, 10)
-        # resampled_image = torchvision.transforms.functional.resize(downsampled_image, size)
+            downsampled_image = diffusion_attack(downsampled_image, 100)
         downsampled_image = torchvision.transforms.functional.to_pil_image(downsampled_image[0])
         
         # super-resolution
