@@ -1,4 +1,4 @@
-diffusers
+diffusers==0.21.*
 transformers
 torch
 torchvision

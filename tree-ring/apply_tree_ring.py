@@ -67,27 +67,27 @@ def main(
         os.mkdir(os.path.join(output_folder, "masks"))
         os.mkdir(os.path.join(output_folder, "captions"))
 
-    # from diffusers import (DPMSolverMultistepInverseScheduler,
-    #                        DPMSolverMultistepScheduler)
-    from diffusers import (DDIMScheduler, DDIMInverseScheduler)
-
-    # generator = TreeRingImageGenerator(
-    #     model="stabilityai/stable-diffusion-2-1-base"
-    #     scheduler=DPMSolverMultistepScheduler,
-    #     inverse_scheduler=DPMSolverMultistepInverseScheduler,
-    #     hyperparams={
-    #         "half_precision": True,
-    #     }
-    # )
+    from diffusers import (DPMSolverMultistepInverseScheduler,
+                           DPMSolverMultistepScheduler)
+    # from diffusers import (DDIMScheduler, DDIMInverseScheduler)
 
     generator = TreeRingImageGenerator(
         model="stabilityai/stable-diffusion-2-1-base",
-        scheduler=DDIMScheduler,
-        inverse_scheduler=DDIMInverseScheduler,
+        scheduler=DPMSolverMultistepScheduler,
+        inverse_scheduler=DPMSolverMultistepInverseScheduler,
         hyperparams={
             "half_precision": True,
         }
     )
+
+    # generator = TreeRingImageGenerator(
+    #     model="stabilityai/stable-diffusion-2-1-base",
+    #     scheduler=DDIMScheduler,
+    #     inverse_scheduler=DDIMInverseScheduler,
+    #     hyperparams={
+    #         "half_precision": True,
+    #     }
+    # )
 
     captions, gt_ids = get_captions(
         hf_dataset,
@@ -143,4 +143,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=1000, resume=True)
+    main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=10, resume=False)

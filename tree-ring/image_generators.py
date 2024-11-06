@@ -1,6 +1,6 @@
 import torch
 from torchvision import transforms
-from diffusers import StableDiffusionPipeline
+from inversable_stable_diffusion import InversableStableDiffusionPipeline
 from diffusers import DDIMScheduler, DDIMInverseScheduler
 from typing import Optional
 from PIL.Image import Image
@@ -60,7 +60,7 @@ class ImageGenerator:
 
         del latents
         del images_tensor
-        return renoised.images
+        return renoised
 
     def _set_hyperparams(
         self,
@@ -104,8 +104,8 @@ class ImageGenerator:
         self.denoise_guidance_scale = denoise_guidance_scale
         self.renoise_guidance_scale = renoise_guidance_scale
 
-    def _get_pipeline(self, model, scheduler) -> StableDiffusionPipeline:
-        pipe = StableDiffusionPipeline.from_pretrained(
+    def _get_pipeline(self, model, scheduler) -> InversableStableDiffusionPipeline:
+        pipe = InversableStableDiffusionPipeline.from_pretrained(
             model,
             torch_dtype=self.dtype,
         ).to(self.device)
@@ -151,21 +151,15 @@ class ImageGenerator:
         return results
 
     def _renoise(self, image_latents) -> list:
-        curr_scheduler = self.pipe.scheduler
-        self.pipe.scheduler = self.inverse_scheduler.from_pretrained(
-            self.model, subfolder="scheduler"
-        )
-
         with torch.no_grad():
-            inverted_latents = self.pipe(
-                prompt="",
+            text_embeddings = self.pipe.get_text_embedding("")
+            inverted_latents = self.pipe.forward_diffusion(
+                text_embeddings=text_embeddings,
                 latents=image_latents,
                 guidance_scale=self.renoise_guidance_scale,
                 num_inference_steps=self.num_steps,
-                output_type="latent",
             )
 
-        self.pipe.scheduler = curr_scheduler
         return inverted_latents
 
     def _preprocess_images_for_renoising(self, images: list[Image]) -> torch.Tensor:
@@ -192,8 +186,7 @@ class ImageGenerator:
 
     def _get_latents(self, images: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
-            latents = self.pipe.vae.encode(images).latent_dist.mode()
-            latents = latents * 0.18215
+            latents = self.pipe.get_image_latents(images, sample=False)
 
         return latents
 
