@@ -1,5 +1,14 @@
 # adversarial checkpoint
 adversarial_attack/surrogate_models/
+watermark_robustness/WatermarkDM/
+watermark_robustness/spoof_watermark/
+watermark_robustness/TreeRingWatermark/
+watermark_robustness/results/
+watermark_robustness/MBRS_repo/
+watermark_robustness/deepfake/
+watermark_robustness/checkpoints/
+watermark_robustness/BLIP/
+watermark_robustness/DiffPure/pretrained/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
