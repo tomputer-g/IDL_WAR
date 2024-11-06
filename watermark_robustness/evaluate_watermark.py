@@ -87,7 +87,7 @@ class AddGaussianNoise():
         return self.__class__.__name__ + '(mean={}, std={})'.format(self.mean, self.std)
 
 class DiffPure():
-    def __init__(self, steps=0.4, save_imgs=False, fname="base"):
+    def __init__(self, img_ids, steps=0.4, save_imgs=False, fname="base"):
         with open('DiffPure/configs/imagenet.yml', 'r') as f:
             config = yaml.safe_load(f)
         self.config = dict2namespace(config)
@@ -96,9 +96,10 @@ class DiffPure():
         self.save_imgs = save_imgs
         self.cnt = 0
         self.fname = fname
+        self.img_ids = img_ids
 
         if self.save_imgs:
-            save_dir = f'/DATA/CMU/competition/regen_image/{self.fname}/{self.steps}'
+            save_dir = f'/DATA/CMU/competition/regen_image/Beige/{self.fname}/{self.steps}'
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
 
@@ -107,10 +108,10 @@ class DiffPure():
         img_noisy = (img_noisy.squeeze(0).to(img.dtype).to("cpu") + 1) / 2
         img_pured = (img_pured.squeeze(0).to(img.dtype).to("cpu") + 1) / 2
         if self.save_imgs:
-            save_dir = f'/DATA/CMU/competition/regen_image/{self.fname}/{self.steps}'
-            save_image(img, os.path.join(save_dir, f'{self.cnt}.png'))
-            save_image(img_noisy, os.path.join(save_dir, f'{self.cnt}_noisy.png'))
-            save_image(img_pured, os.path.join(save_dir, f'{self.cnt}_pured.png'))
+            save_dir = f'/DATA/CMU/competition/regen_image/Beige/{self.fname}/{self.steps}'
+            save_image(img, os.path.join(save_dir, f'{self.img_ids[self.cnt]}.png'))
+            save_image(img_noisy, os.path.join(save_dir, f'{self.img_ids[self.cnt]}_noisy.png'))
+            save_image(img_pured, os.path.join(save_dir, f'{self.img_ids[self.cnt]}_pured.png'))
             self.cnt += 1
         return img_pured
     
@@ -150,7 +151,7 @@ class ImageRephrase():
     def __repr__(self):
         return self.__class__.__name__
 
-def get_transforms(aug_str, fname="base", save_images=False):
+def get_transforms(aug_str, img_ids, fname="base", save_images=False):
     aug = aug_str.split(',')[0]
     params = aug_str.split(',')[1:]
     transform = transforms.Compose(
@@ -256,7 +257,7 @@ def get_transforms(aug_str, fname="base", save_images=False):
         transform = transforms.Compose([
             transforms.Resize(512),
             transforms.ToTensor(),
-            DiffPure(steps=float(params[0]), save_imgs=save_images, fname=fname)
+            DiffPure(steps=float(params[0]), save_imgs=save_images, fname=fname, img_ids = img_ids)
         ])
     elif aug == 'diffpure_latent':
         transform = transforms.Compose([
@@ -303,7 +304,7 @@ def main():
         aug_list = ['no_aug']
     elif args.attack == 'diffpure':
         #aug_list = ['no_aug', 'diffpure,0.1', 'diffpure,0.2', 'diffpure,0.3']
-        aug_list = ['diffpure,0.1', 'diffpure,0.2', 'diffpure,0.3']
+        aug_list = ['diffpure,0.35', 'diffpure,0.40', 'diffpure,0.45', 'diffpure,0.50']
     elif args.attack == 'diffpure_latent':
         aug_list = ['no_aug', 'diffpure_latent,0.2,1', 'diffpure_latent,0.3,1', 'diffpure_latent,0.4,1']
     elif args.attack == 'common_augs':
@@ -327,12 +328,17 @@ def main():
     for aug in aug_list:
         print("Augmentation:", aug)
 
-        transform, org_transform = get_transforms(aug, args.wm_method, args.save_images)
-        
+        dataset = CustomImageFolder(args.data_dir, transform=None, return_fname=True)
+        img_ids = dataset.img_ids
+        img_ids = [int(i) for i in img_ids]
+        transform, org_transform = get_transforms(aug, img_ids,args.wm_method, args.save_images)
+        #import pdb;pdb.set_trace()
         if transform == None:
             continue
+
+        dataset = CustomImageFolder(args.data_dir, transform=transform, return_fname=True)
+        img_ids = dataset.img_ids
         
-        dataset = CustomImageFolder(args.data_dir, transform=transform)
         data_cnt = len(dataset)
         #org_dataset = CustomImageFolder(args.org_data_dir, transform=org_transform, data_cnt=data_cnt)
 
@@ -351,7 +357,8 @@ def main():
             if args.wm_method == "rivaGan":
                 WatermarkDecoder.loadModel()
 
-            for i, (img_tensor, label) in tqdm(enumerate(dataset)):
+            for i, (img_tensor, label, file_name) in tqdm(enumerate(dataset)):
+                #import pdb;pdb.set_trace()
                 img_np = img_tensor.numpy().transpose(1, 2, 0) * 255
                 img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
                 # img_np = cv2.imread(dataset.filenames[i])
