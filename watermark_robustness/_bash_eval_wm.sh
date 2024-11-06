@@ -9,7 +9,6 @@
 # --org-data-dir images/imagenet/org \
 # --out-fname diffpure \
 
-CUDA_VISIBLE_DEVICES=6 \
  python evaluate_watermark.py \
   --wm_method rivaGan \
   --attack diffpure \
@@ -63,7 +62,6 @@ CUDA_VISIBLE_DEVICES=6 \
 
 # example for eps=12
 
-# CUDA_VISIBLE_DEVICES=6 \
 #   python evaluate_watermark.py \
 #     --wm_method stegaStamp \
 #     --attack no_aug \
@@ -72,7 +70,6 @@ CUDA_VISIBLE_DEVICES=6 \
 #     --org_data_dir /DATA/CMU/surrogate_model/unwatermarked \
 #     --out_fname adv \
 
-# CUDA_VISIBLE_DEVICES=6 \
 #   python evaluate_watermark.py \
 #     --wm_method treeRing \
 #     --attack no_aug \
