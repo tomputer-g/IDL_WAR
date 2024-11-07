@@ -112,8 +112,8 @@ def p_value(latent_tensor, key, mask, channel=0):
     fft_applied = fft(latent_tensor)
 
     # useful code for debugging if injected key is reasonable
-    visualize_tensor(fft_applied.real, name="renoised_real.png")
-    visualize_tensor(fft_applied.imag, name="renoised_imag.png")
+    # visualize_tensor(fft_applied.real, name="renoised_real.png")
+    # visualize_tensor(fft_applied.imag, name="renoised_imag.png")
 
     # extract bits corresponding to key
     key_from_latents = fft_applied[channel, mask]
@@ -133,7 +133,30 @@ def p_value(latent_tensor, key, mask, channel=0):
 
     return p_val
 
+def l1_dist(latent_tensor, key, mask, channel=0):
+    # apply fft
+    fft_applied = fft(latent_tensor)
 
-def detect(latent_tensor, key, mask, p_val_thresh=0.01) -> tuple[float, bool]:
+    # useful code for debugging if injected key is reasonable
+    # visualize_tensor(fft_applied.real, name="renoised_real.png")
+    # visualize_tensor(fft_applied.imag, name="renoised_imag.png")
+
+    # extract bits corresponding to key
+    key_from_latents = fft_applied[channel, mask]
+
+    # convert to larger dtype first so we don't get inf
+    key_from_latents = key_from_latents.type(torch.complex64)
+    key = key.type(torch.complex64)
+
+    # calculate dist
+    dist = 1 / mask.sum() * torch.abs(key[mask] - key_from_latents).sum()
+
+    return dist
+
+def detect_pval(latent_tensor, key, mask, p_val_thresh=0.01) -> tuple[float, bool]:
     p_val = p_value(latent_tensor, key, mask)
     return float(p_val), bool(p_val < p_val_thresh)
+
+def detect_dist(latent_tensor, key, mask, dist_thresh=77) -> tuple[float, bool]:
+    dist = l1_dist(latent_tensor, key, mask)
+    return float(dist), bool(dist < dist_thresh)
