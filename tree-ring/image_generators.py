@@ -5,7 +5,7 @@ from diffusers import DDIMScheduler, DDIMInverseScheduler
 from typing import Optional
 from PIL.Image import Image
 
-from watermark import watermark, detect, extract_key
+from watermark import watermark, detect_pval, detect_dist, extract_key
 
 
 class ImageGenerator:
@@ -121,17 +121,11 @@ class ImageGenerator:
     def _generate_initial_noise(
         self, batch_size: int, generator: torch.Generator
     ) -> torch.Tensor:
-        output_shape = (batch_size, *self.latent_shape)
-        assert len(output_shape) == 4
-        # return torch.randn(
-        #     output_shape, device=self.device, dtype=self.dtype, generator=generator
-        # ) * 0.18215
-
         return self.pipe.prepare_latents(
             batch_size,
             self.latent_shape[0],
-            512,
-            512,
+            self.resolution,
+            self.resolution,
             self.dtype,
             self.device,
             generator
@@ -168,7 +162,6 @@ class ImageGenerator:
             [
                 transforms.Resize(self.resolution),  # Resize all images to 512x512
                 transforms.ToTensor(),
-                # transforms.Normalize([0.5], [0.5]),  # Normalize to range [-1, 1]
             ]
         )
 
@@ -235,7 +228,6 @@ class TreeRingImageGenerator(ImageGenerator):
         masks = []
         for i in range(latents.shape[0]):
             tensor = latents[i]
-            print(tensor.shape)
             assert tensor.shape == self.latent_shape
 
             tensor, key, mask = watermark(
@@ -260,8 +252,15 @@ class TreeRingImageGenerator(ImageGenerator):
         images: list[Image],
         keys: list[torch.Tensor],
         masks: list[torch.Tensor],
+        use_pval: bool = True,
         p_val_thresh: float = 0.01,
+        dist_thresh: float = 77,
     ) -> list[bool]:
+        if use_pval:
+            detect = detect_pval
+        else:
+            detect = detect_dist
+
         latents = self.renoise_images(images)
 
         results = []
