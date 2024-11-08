@@ -4,6 +4,8 @@ from inversable_stable_diffusion import InversableStableDiffusionPipeline
 from diffusers import DDIMScheduler, DDIMInverseScheduler
 from typing import Optional
 from PIL.Image import Image
+from functools import partial
+
 
 from watermark import watermark, detect_pval, detect_dist, extract_key
 
@@ -257,16 +259,16 @@ class TreeRingImageGenerator(ImageGenerator):
         dist_thresh: float = 77,
     ) -> list[bool]:
         if use_pval:
-            detect = detect_pval
+            detect = partial(detect_pval, p_val_thresh=p_val_thresh)
         else:
-            detect = detect_dist
+            detect = partial(detect_dist, dist_thresh=dist_thresh)
 
         latents = self.renoise_images(images)
 
         results = []
         for i in range(len(images)):
             results.append(
-                detect(latents[i], keys[i], masks[i], p_val_thresh=p_val_thresh)
+                detect(latents[i], keys[i], masks[i])
             )
         return results
     

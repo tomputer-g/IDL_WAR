@@ -3,15 +3,17 @@ from sklearn.metrics import auc, roc_curve
 
 true_labels = []
 probs = []
-with open("results/eval_probs_blurredr4.csv") as f:
+with open("eval_probs.csv") as f:
     for line in f.readlines():
         data = line.strip().split(",")
         true_labels.append(int(data[2]))
-        probs.append(1-float(data[3]))
+        probs.append(-float(data[3]))
 
 
 
 fpr, tpr, thresholds = roc_curve(true_labels, probs)
+print(tpr)
+print(thresholds)
 print(auc(fpr, tpr))
 print(tpr[np.where(fpr<0.01)[0][-1]])
 print(tpr[np.where(fpr<0.001)[0][-1]])

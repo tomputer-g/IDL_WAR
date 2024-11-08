@@ -13,3 +13,4 @@ def visualize_tensor(tensor, name="./tmp.png"):
 
     plt.savefig(name)
     plt.show()
+    plt.close()

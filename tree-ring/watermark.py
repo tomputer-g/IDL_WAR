@@ -94,12 +94,12 @@ def generate_key(size, type="rings", radius=10, device="cpu", dtype=torch.comple
 
     return key, circle_mask
 
-def extract_key(latent_tensor, mask):
+def extract_key(latent_tensor, mask, channel=0):
     # apply fft
     fft_applied = fft(latent_tensor)
 
     # extract bits corresponding to key
-    key_from_latents = fft_applied[0, mask]  # assume key is 0th dim
+    key_from_latents = fft_applied[channel, mask]  # assume key is 0th dim
 
     # convert to larger dtype first so we don't get inf
     key_from_latents = key_from_latents.type(torch.complex64)
@@ -138,8 +138,8 @@ def l1_dist(latent_tensor, key, mask, channel=0):
     fft_applied = fft(latent_tensor)
 
     # useful code for debugging if injected key is reasonable
-    # visualize_tensor(fft_applied.real, name="renoised_real.png")
-    # visualize_tensor(fft_applied.imag, name="renoised_imag.png")
+    visualize_tensor(fft_applied.real, name="renoised_real.png")
+    visualize_tensor(fft_applied.imag, name="renoised_imag.png")
 
     # extract bits corresponding to key
     key_from_latents = fft_applied[channel, mask]
@@ -149,7 +149,7 @@ def l1_dist(latent_tensor, key, mask, channel=0):
     key = key.type(torch.complex64)
 
     # calculate dist
-    dist = 1 / mask.sum() * torch.abs(key[mask] - key_from_latents).sum()
+    dist = torch.abs(key[mask] - key_from_latents).mean().item()
 
     return dist
 

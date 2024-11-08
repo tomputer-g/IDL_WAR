@@ -119,7 +119,8 @@ def eval_auc_and_tpr(
             })
 
     for true_label, p_val in precalculated_data.values():
-        probabilities.append(1 - p_val)
+        # probabilities.append(1 - p_val)
+        watermarked_prob = -p_val
         true_labels.append(true_label)
 
     for i, image in enumerate(images):
@@ -139,9 +140,10 @@ def eval_auc_and_tpr(
 
         if (image, "unwatermarked") not in precalculated_data:
             p_val, _ = generator.detect(
-                [unwatermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=fpr_target
+                [unwatermarked], keys[i : i + 1], masks[i : i + 1], use_pval=True
             )[0]
             watermarked_prob = 1 - p_val
+            # watermarked_prob = -p_val
 
             true_labels.append(0)
             probabilities.append(watermarked_prob)
@@ -153,9 +155,10 @@ def eval_auc_and_tpr(
 
         if (image, "watermarked") not in precalculated_data:
             p_val, _ = generator.detect(
-                [watermarked], keys[i : i + 1], masks[i : i + 1], p_val_thresh=fpr_target
+                [watermarked], keys[i : i + 1], masks[i : i + 1], use_pval=True
             )[0]
             watermarked_prob = 1 - p_val
+            # watermarked_prob = -p_val
 
             true_labels.append(1)
             probabilities.append(watermarked_prob)
@@ -294,5 +297,5 @@ if __name__ == "__main__":
         "outputs/watermarked",
         "outputs/keys",
         "outputs/masks",
-        attack=attack
+        # attack=attack
     )
