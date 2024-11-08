@@ -7,12 +7,12 @@ import random
 from tensorflow.python.saved_model import tag_constants, signature_constants
 
 # Paths
-ENCODER_MODEL_PATH = '/ocean/projects/cis220031p/sbaek/StegaStamp/StegaStamp/saved_models/original'
-REMOVER_CHECKPOINTS_PATH = '/ocean/projects/cis220031p/sbaek/StegaStamp/StegaStamp/remover_checkpoints/'
+ENCODER_MODEL_PATH = '/data/PSC/StegaStamp/StegaStamp/saved_models/original'
+REMOVER_CHECKPOINTS_PATH = '/data/PSC/StegaStamp/StegaStamp/remover_checkpoints_with_image/'
 if not os.path.exists(REMOVER_CHECKPOINTS_PATH):
     os.makedirs(REMOVER_CHECKPOINTS_PATH)
 
-TRAIN_PATH = '/ocean/projects/cis220031p/sbaek/StegaStamp/image/coco2017/train2017/'
+TRAIN_PATH = '/data/PSC/StegaStamp/image/coco2017/train2017/'
 
 def get_img_batch(files_list, batch_size=4, size=(400, 400)):
     batch_images = []
@@ -43,6 +43,7 @@ def get_watermarked_batch(sess, input_secret, input_image, output_residual, file
     encoded_images = np.clip(encoded_images, 0, 1)
     return batch_cover, encoded_images
 
+
 def train_watermark_remover(files_list, secret_size, args):
     tf.reset_default_graph()
 
@@ -64,27 +65,38 @@ def train_watermark_remover(files_list, secret_size, args):
     removal_loss = tf.reduce_mean(tf.square(restored_image - clean_image_pl))
     optimizer = tf.train.AdamOptimizer(args.lr).minimize(removal_loss)
 
-    # TensorBoard summaries
-    summary_op = tf.summary.merge([tf.summary.scalar('removal_loss', removal_loss)])
+    # Define summaries for TensorBoard
+    tf.summary.scalar('removal_loss', removal_loss)
+    tf.summary.image('Original Image', clean_image_pl, max_outputs=2)
+    tf.summary.image('Watermarked Image', watermarked_image_pl, max_outputs=2)
+    tf.summary.image('Restored Image', restored_image, max_outputs=2)
+
+    # Merge all summaries
+    summary_op = tf.summary.merge_all()
 
     # Saver for the remover model
     remover_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='remover')
     remover_saver = tf.train.Saver(var_list=remover_vars, max_to_keep=10)
 
     with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
+        # Load the encoder model with an import scope
+        model = tf.saved_model.loader.load(sess, [tag_constants.SERVING], ENCODER_MODEL_PATH, import_scope='encoder')
 
-        # Load the encoder model
-        model = tf.saved_model.loader.load(sess, [tag_constants.SERVING], ENCODER_MODEL_PATH)
-
-        # Access encoder's input and output tensors using the SavedModel signature
+        # Access encoder's tensors
         input_secret_name = model.signature_def[signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY].inputs['secret'].name
         input_image_name = model.signature_def[signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY].inputs['image'].name
         output_residual_name = model.signature_def[signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY].outputs['residual'].name
 
-        input_secret = tf.get_default_graph().get_tensor_by_name(input_secret_name)
-        input_image = tf.get_default_graph().get_tensor_by_name(input_image_name)
-        output_residual = tf.get_default_graph().get_tensor_by_name(output_residual_name)
+        input_secret = sess.graph.get_tensor_by_name('encoder/' + input_secret_name)
+        input_image = sess.graph.get_tensor_by_name('encoder/' + input_image_name)
+        output_residual = sess.graph.get_tensor_by_name('encoder/' + output_residual_name)
+
+        # Initialize variables for the remover model and optimizer
+        # Collect variables not in 'encoder' scope
+        encoder_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='encoder')
+        global_vars = tf.global_variables()
+        vars_to_init = [v for v in global_vars if v not in encoder_vars]
+        sess.run(tf.variables_initializer(var_list=vars_to_init))
 
         # TensorBoard writer
         log_dir = os.path.join(REMOVER_CHECKPOINTS_PATH, 'logs')
@@ -106,7 +118,7 @@ def train_watermark_remover(files_list, secret_size, args):
 
             # Training step
             feed_dict = {clean_image_pl: clean_images, watermarked_image_pl: watermarked_images}
-            _, loss, summary = sess.run([optimizer, removal_loss, summary_op], feed_dict)
+            _, loss, summary, restored_images = sess.run([optimizer, removal_loss, summary_op, restored_image], feed_dict)
 
             # Log summaries every 100 steps
             if global_step % 100 == 0:
@@ -114,12 +126,29 @@ def train_watermark_remover(files_list, secret_size, args):
                 writer.flush()
                 print(f"Step {global_step}: Removal loss = {loss:.6f}")
 
-            # Save checkpoint every 1000 steps
+            # Save checkpoint and images every 1000 steps
             if global_step % 1000 == 0:
+                # Save the model checkpoint
                 remover_saver.save(sess, os.path.join(REMOVER_CHECKPOINTS_PATH, f'remover_model_step_{global_step}.ckpt'))
+
+                # Save images
+                for i in range(args.batch_size):
+                    # Save original image
+                    original_image = (clean_images[i] * 255).astype(np.uint8)
+                    Image.fromarray(original_image).save(os.path.join(REMOVER_CHECKPOINTS_PATH, f'original_step_{global_step}_image_{i}.png'))
+
+                    # Save watermarked image
+                    watermarked_image = (watermarked_images[i] * 255).astype(np.uint8)
+                    Image.fromarray(watermarked_image).save(os.path.join(REMOVER_CHECKPOINTS_PATH, f'watermarked_step_{global_step}_image_{i}.png'))
+
+                    # Save restored image
+                    restored_image_output = (restored_images[i] * 255).astype(np.uint8)
+                    Image.fromarray(restored_image_output).save(os.path.join(REMOVER_CHECKPOINTS_PATH, f'restored_step_{global_step}_image_{i}.png'))
+
             global_step += 1
 
         writer.close()
+
 
 def main():
     import argparse
@@ -144,3 +173,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
