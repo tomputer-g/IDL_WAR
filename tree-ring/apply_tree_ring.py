@@ -10,6 +10,10 @@ from PIL import ImageFilter
 from utils import visualize_tensor
 from watermark import fft
 
+from diffusers import (DPMSolverMultistepInverseScheduler,
+                           DPMSolverMultistepScheduler)
+from diffusers import (DDIMScheduler, DDIMInverseScheduler)
+
 
 def get_unique_seed(i):
     i_str = str(i)
@@ -66,10 +70,6 @@ def main(
         os.mkdir(os.path.join(output_folder, "keys"))
         os.mkdir(os.path.join(output_folder, "masks"))
         os.mkdir(os.path.join(output_folder, "captions"))
-
-    from diffusers import (DPMSolverMultistepInverseScheduler,
-                           DPMSolverMultistepScheduler)
-    # from diffusers import (DDIMScheduler, DDIMInverseScheduler)
 
     generator = TreeRingImageGenerator(
         model="stabilityai/stable-diffusion-2-1-base",
