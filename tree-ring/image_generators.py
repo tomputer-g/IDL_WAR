@@ -222,7 +222,7 @@ class TreeRingImageGenerator(ImageGenerator):
         self.radius = tree_ring_hyperparams.get("radius", 10)
 
     def generate_watermarked_images(
-        self, prompts: list[str], rng_generator: Optional[torch.Generator] = None
+        self, prompts: list[str], rng_generator: Optional[torch.Generator] = None, channel: int = 0,
     ) -> tuple[list[Image], list[torch.Tensor], list[torch.Tensor]]:
         latents = self._generate_initial_noise(len(prompts), rng_generator)
 
@@ -233,7 +233,7 @@ class TreeRingImageGenerator(ImageGenerator):
             assert tensor.shape == self.latent_shape
 
             tensor, key, mask = watermark(
-                tensor, self.type, self.radius, device=self.device
+                tensor, self.type, self.radius, device=self.device, channel=channel
             )
             latents[i] = tensor
             keys.append(key)

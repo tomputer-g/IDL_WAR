@@ -4,7 +4,7 @@ import shutil
 
 import torch
 from datasets import load_dataset
-# import click
+import click
 from image_generators import TreeRingImageGenerator
 from PIL import ImageFilter
 from utils import visualize_tensor
@@ -41,22 +41,23 @@ def get_captions(hf_dataset, split=None, num_files_to_process=-1, with_gt_id=Fal
         raise Exception("No caption getter implemented for the given dataset.")
 
 
-# @click.command()
-# @click.option("--input_file", help="File with prompts.")
-# @click.option(
-#     "--dataset",
-#     default="ms-coco_train_2017",
-#     help="Dataset you are working with, default ms-coco_train_2017",
-# )
-# @click.option("--output_folder", help="Folder to put watermarked images in.")
-# @click.option("--num_files_to_process", help="The number of files to actually process.")
+@click.command()
+@click.option(
+    "--hf_dataset",
+    default="phiyodr/coco2017",
+    show_default=True,
+    help="Dataset you are working with.",
+)
+@click.option("--split", default="validation", show_default=True, help="Split to use")
+@click.option("--output_folder", default="outputs", show_default=True, help="Folder to put results in.")
+@click.option("--channel", default=0, show_default=True, help="Channel to put tree-ring watermark in.")
+@click.option("--num_files_to_process", default=-1, show_default=True, help="The number of files to actually process.")
+@click.option("--resume", is_flag=True, show_default=True, default=True, help="Resume from previous run.")
 def main(
     hf_dataset,
-    gt_folder,
     output_folder,
     split=None,
     num_files_to_process=-1,
-    apply_watermark=True,
     channel=0,
     resume=True
 ):
@@ -112,7 +113,7 @@ def main(
         seed = get_unique_seed(i)
         rng_generator = torch.cuda.manual_seed(seed)
         image, key, mask = generator.generate_watermarked_images(
-            [caption], rng_generator=rng_generator
+            [caption], rng_generator=rng_generator, channel=channel
         )
         watermarked_images.append(image[0])
         keys.append(key[0])
@@ -143,4 +144,5 @@ def main(
 
 
 if __name__ == "__main__":
-    main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=-1, resume=True)
+    # main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=-1, resume=True)
+    main()
