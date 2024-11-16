@@ -1,6 +1,6 @@
 import torch
 from torchvision import transforms
-from inversable_stable_diffusion import InversableStableDiffusionPipeline
+from diffusers import DDIMPipeline
 from diffusers import DDIMScheduler, DDIMInverseScheduler
 from typing import Optional
 from PIL.Image import Image
@@ -13,7 +13,7 @@ from watermark import watermark, detect_pval, detect_dist, extract_key
 class ImageGenerator:
     def __init__(
         self,
-        model: str = "stabilityai/stable-diffusion-2",
+        model: str = "google/ddpm-cifar10-32",
         scheduler=DDIMScheduler,
         inverse_scheduler=DDIMInverseScheduler,
         hyperparams: dict[str, any] = {
@@ -35,32 +35,19 @@ class ImageGenerator:
     def generate_images(
         self, prompts: list[str], rng_generator: torch.Generator
     ) -> list[Image]:
-        latents = self._generate_initial_noise(len(prompts), rng_generator)
+        noise = self._generate_initial_noise(len(prompts), rng_generator)
 
-        # for i, img in enumerate(self._get_images(latents)):
-        #     image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
-        #     image.save(f"original_noise_{prompts[i]}.jpg", format="JPEG")
-
-        imgs = self._denoise(prompts, latents)
-
-        # for i, img in enumerate(imgs.images):
-        #     img.save(f"image_{prompts[i]}.jpg")
+        imgs = self._denoise(prompts, noise)
 
         self.prompts = prompts  # used for saving debugging images later
 
-        del latents
+        del noise
         return imgs.images
 
     def renoise_images(self, images: list[Image]) -> list[torch.Tensor]:
         images_tensor = self._preprocess_images_for_renoising(images)
-        latents = self._get_latents(images_tensor)
-        renoised = self._renoise(latents)
+        renoised = self._renoise(images_tensor)
 
-        # for i, img in enumerate(self._get_images(renoised.images)):
-        #     image = transforms.ToPILImage()(img.cpu())  # Convert tensor to PIL Image
-        #     image.save(f"noise_{self.prompts[i]}.jpg", format="JPEG")
-
-        del latents
         del images_tensor
         return renoised
 
@@ -75,17 +62,6 @@ class ImageGenerator:
     ):
         # resolution settings
         self.resolution = resolution
-
-        # latent tensor size based on resolution
-        match resolution:
-            case 512:
-                self.latent_shape = (4, 64, 64)
-            case 768:
-                self.latent_shape = (4, 96, 96)
-            case _:
-                raise Exception(
-                    f"Invalid resolution of {resolution}. Must be 512 or 768"
-                )
 
         # number of noising/denoising steps
         self.num_steps = num_steps
@@ -106,8 +82,8 @@ class ImageGenerator:
         self.denoise_guidance_scale = denoise_guidance_scale
         self.renoise_guidance_scale = renoise_guidance_scale
 
-    def _get_pipeline(self, model, scheduler) -> InversableStableDiffusionPipeline:
-        pipe = InversableStableDiffusionPipeline.from_pretrained(
+    def _get_pipeline(self, model, scheduler) -> DDIMPipeline:
+        pipe = DDIMPipeline.from_pretrained(
             model,
             torch_dtype=self.dtype,
         ).to(self.device)
@@ -135,14 +111,7 @@ class ImageGenerator:
 
     def _denoise(self, prompts: list[str], latents: torch.Tensor) -> list:
         with torch.no_grad():
-            results = self.pipe(
-                prompt=prompts,
-                latents=latents,
-                guidance_scale=self.denoise_guidance_scale,
-                num_inference_steps=self.num_steps,
-                height=self.resolution,
-                width=self.resolution,
-            )
+            self.scheduler.set_timesteps(num_inference_steps)
 
         return results
 
@@ -196,6 +165,96 @@ class TreeRingImageGenerator(ImageGenerator):
     def __init__(
         self,
         model: str = "stabilityai/stable-diffusion-2",
+        scheduler=DDIMScheduler,
+        inverse_scheduler=DDIMInverseScheduler,
+        hyperparams: dict[str, any] = {
+            "resolution": 512,
+            "num_steps": 50,
+            "device": None,
+            "half_precision": False,
+            "denoise_guidance_scale": 7.5,
+            "renoise_guidance_scale": 1.0,
+        },
+        tree_ring_hyperparams: dict[str, any] = {
+            "type": "rings",
+            "radius": 10,
+        },
+    ):
+        super().__init__(
+            model=model,
+            scheduler=scheduler,
+            inverse_scheduler=inverse_scheduler,
+            hyperparams=hyperparams,
+        )
+
+        self.type = tree_ring_hyperparams.get("type", "rings")
+        self.radius = tree_ring_hyperparams.get("radius", 10)
+
+    def generate_watermarked_images(
+        self, prompts: list[str], rng_generator: Optional[torch.Generator] = None
+    ) -> tuple[list[Image], list[torch.Tensor], list[torch.Tensor]]:
+        latents = self._generate_initial_noise(len(prompts), rng_generator)
+
+        keys = []
+        masks = []
+        for i in range(latents.shape[0]):
+            tensor = latents[i]
+            assert tensor.shape == self.latent_shape
+
+            tensor, key, mask = watermark(
+                tensor, self.type, self.radius, device=self.device
+            )
+            latents[i] = tensor
+            keys.append(key)
+            masks.append(mask)
+
+        imgs = self._denoise(prompts, latents)
+
+        # for i, img in enumerate(imgs.images):
+        #     img.save(f"watermarked_image_{prompts[i]}.jpg")
+
+        self.prompts = prompts  # used for saving debugging images later
+
+        del latents
+        return imgs.images, keys, masks
+
+    def detect(
+        self,
+        images: list[Image],
+        keys: list[torch.Tensor],
+        masks: list[torch.Tensor],
+        use_pval: bool = True,
+        p_val_thresh: float = 0.01,
+        dist_thresh: float = 77,
+    ) -> list[bool]:
+        if use_pval:
+            detect = partial(detect_pval, p_val_thresh=p_val_thresh)
+        else:
+            detect = partial(detect_dist, dist_thresh=dist_thresh)
+
+        latents = self.renoise_images(images)
+
+        results = []
+        for i in range(len(images)):
+            results.append(
+                detect(latents[i], keys[i], masks[i])
+            )
+        return results
+    
+    def extract_key(self, images: list[Image], masks: list[torch.Tensor]) -> list[torch.Tensor]:
+        latents = self.renoise_images(images)
+
+        results = []
+        for i in range(len(images)):
+            results.append(
+                extract_key(latents[i], masks[i])
+            )
+        return results
+    
+class ImageSpaceTreeRingImageGenerator(ImageGenerator):
+    def __init__(
+        self,
+        model: str = "google/ddpm-cifar10-32",
         scheduler=DDIMScheduler,
         inverse_scheduler=DDIMInverseScheduler,
         hyperparams: dict[str, any] = {
