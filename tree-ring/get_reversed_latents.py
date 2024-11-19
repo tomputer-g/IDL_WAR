@@ -1,24 +1,18 @@
 import pickle
+import multiprocessing
+import os
+import shutil
 
+import click
+from diffusers import DPMSolverMultistepInverseScheduler, DPMSolverMultistepScheduler
+from PIL import Image, UnidentifiedImageError
+
+from image_generators import TreeRingImageGenerator
 
 def save_latent(save_path, image_id, latents):
     # Save tensor to a .pkl file
     with open(os.path.join(save_path, f"{image_id}.pkl"), "wb") as f:
         pickle.dump(latents, f)
-
-
-import multiprocessing
-import os
-import shutil
-
-import torch
-from diffusers import DPMSolverMultistepInverseScheduler, DPMSolverMultistepScheduler
-from PIL import Image, UnidentifiedImageError
-from pytorch_fid.fid_score import calculate_fid_given_paths
-from sklearn.metrics import auc, roc_curve
-
-from image_generators import TreeRingImageGenerator
-
 
 def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
     temp_folder = "temp_" + os.path.basename(original_folder)
@@ -66,7 +60,12 @@ def copy_to_temp_folder_with_resize(
 def delete_temp_folder(temp_folder: str):
     shutil.rmtree(temp_folder)
 
-
+@click.command()
+@click.option("--processed_file", default="outputs/processed.txt", show_default=True, help="Path to processed.txt")
+@click.option("--unwatermarked_folder", default="outputs/unwatermarked", show_default=True, help="Path to unwatermarked images folder")
+@click.option("--watermarked_folder", default="outputs/watermarked", show_default=True, help="Path to watermarked images folder")
+@click.option("--output_folder", default="reversed_latents", show_default=True, help="Folder to output reversed latents to")
+@click.option("--resume", is_flag=True, show_default=True, default=True, help="Resume from previous run.")
 def main(
     processed_file,
     unwatermarked_folder,
@@ -133,11 +132,5 @@ def main(
     delete_temp_folder(unwatermarked_temp)
     delete_temp_folder(watermarked_temp)
 
-
 if __name__ == "__main__":
-    main(
-        "outputs_original/processed.txt",
-        "outputs_original/unwatermarked",
-        "outputs_original/watermarked",
-        "reversed_latents",
-    )
+    main()
