@@ -4,6 +4,7 @@ import shutil
 
 import numpy as np
 import torch
+import click
 from diffusers import (DPMSolverMultistepInverseScheduler,
                        DPMSolverMultistepScheduler)
 from diffusers import (DDIMScheduler, DDIMInverseScheduler)
@@ -13,6 +14,13 @@ from sklearn.metrics import auc, roc_curve
 
 from image_generators import TreeRingImageGenerator
 
+def get_attack(attack_name):
+    if attack_name == "rotation":
+        return lambda img: img.rotate(75)
+    if attack_name == "blur":
+        return lambda img: img.filter(ImageFilter.GaussianBlur(radius=4))
+    
+    raise Exception(f"Unimplemented attack {attack_name} requested")
 
 def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
     temp_folder = "temp_" + os.path.basename(original_folder)
@@ -81,22 +89,23 @@ def eval_auc_and_tpr(
     },
     attack=None,
 ):
-    # generator = TreeRingImageGenerator(
-    #     scheduler=DPMSolverMultistepScheduler,
-    #     inverse_scheduler=DPMSolverMultistepInverseScheduler,
-    #     hyperparams={
-    #         "half_precision": True,
-    #     },
-    # )
-
     generator = TreeRingImageGenerator(
         model="stabilityai/stable-diffusion-2-1-base",
-        scheduler=DDIMScheduler,
-        inverse_scheduler=DDIMInverseScheduler,
+        scheduler=DPMSolverMultistepScheduler,
+        inverse_scheduler=DPMSolverMultistepInverseScheduler,
         hyperparams={
             "half_precision": True,
-        }
+        },
     )
+
+    # generator = TreeRingImageGenerator(
+    #     model="stabilityai/stable-diffusion-2-1-base",
+    #     scheduler=DDIMScheduler,
+    #     inverse_scheduler=DDIMInverseScheduler,
+    #     hyperparams={
+    #         "half_precision": True,
+    #     }
+    # )
 
     probabilities = []
     true_labels = []
@@ -192,7 +201,14 @@ def eval_fid(gt_folder, unwatermarked_folder, watermarked_folder):
 
     return unwatermarked_fid, watermarked_fid
 
-
+@click.command()
+@click.option("--processed_file", default="outputs/processed.txt", show_default=True, help="Path to processed.txt")
+@click.option("--gt_folder", default="val2017", show_default=True, help="Path to ground truth folder")
+@click.option("--unwatermarked_folder", default="outputs/unwatermarked", show_default=True, help="Path to unwatermarked images folder")
+@click.option("--watermarked_folder", default="outputs/watermarked", show_default=True, help="Path to watermarked images folder")
+@click.option("--keys_folder", default="outputs/keys", show_default=True, help="Path to keys folder")
+@click.option("--masks_folder", default="outputs/masks", show_default=True, help="Path to masks folder")
+@click.option("--attack", help="Attack to evaluate against from [rotation, blur]")
 def main(
     processed_file,
     gt_folder,
@@ -202,6 +218,10 @@ def main(
     masks_folder,
     attack=None,
 ):
+    
+    if attack is not None:
+        attack = get_attack(attack)
+
     with open(processed_file, mode="r") as f:
         images = [line.strip() for line in f.readlines()]
 
@@ -281,21 +301,4 @@ def main(
 
 
 if __name__ == "__main__":
-    import PIL
-    from PIL import ImageFilter
-    import torch
-    import torchvision.transforms as T
-
-    def attack(img):
-        return img.rotate(75)
-        # return img.filter(ImageFilter.GaussianBlur(radius=4))
-
-    main(
-        "outputs/processed.txt",
-        "val2017",
-        "outputs/unwatermarked",
-        "outputs/watermarked",
-        "outputs/keys",
-        "outputs/masks",
-        # attack=attack
-    )
+    main()

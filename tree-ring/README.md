@@ -52,8 +52,24 @@ outputs/
 
 # Evaluate Tree-Ring
 
-Without attacks:
-```python eval_tree_ring.py```
+Inputs:
+```
+Options:
+  --processed_file TEXT        Path to processed.txt  [default: outputs/processed.txt]
+  --gt_folder TEXT             Path to ground truth folder  [default: val2017]
+  --unwatermarked_folder TEXT  Path to unwatermarked images folder  [default: outputs/unwatermarked]
+  --watermarked_folder TEXT    Path to watermarked images folder  [default: outputs/watermarked]
+  --keys_folder TEXT           Path to keys folder  [default: outputs/keys]
+  --masks_folder TEXT          Path to masks folder  [default: outputs/masks]
+  --attack TEXT                Attack to evaluate against from [rotation, blur]
+  --help                       Show this message and exit.
+```
+
+Outputs:
+ - eval_probs_unwatermarked.csv: p-values for the unwatermarked images
+ - eval_probs_watermarked.csv: p-values for the watermarked images
+ - eval_probs.csv: p-values for both unwatermarked and watermarked images
+ - in stdout: AUC, TPR@1%FPR, Unwatermarked FID, Watermarked FID
 
 # References
 ## Tree-Ring
