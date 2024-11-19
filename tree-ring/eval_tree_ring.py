@@ -12,7 +12,7 @@ from PIL import Image, UnidentifiedImageError
 from pytorch_fid.fid_score import calculate_fid_given_paths
 from sklearn.metrics import auc, roc_curve
 
-from image_generators import TreeRingImageGenerator
+from image_generators import get_tree_ring_generator
 
 def get_attack(attack_name):
     if attack_name == "rotation":
@@ -88,15 +88,10 @@ def eval_auc_and_tpr(
         "combined": "eval_probs.csv",  
     },
     attack=None,
+    model="stabilityai/stable-diffusion-2-1-base",
+    scheduler="DPMSolverMultistepScheduler",
 ):
-    generator = TreeRingImageGenerator(
-        model="stabilityai/stable-diffusion-2-1-base",
-        scheduler=DPMSolverMultistepScheduler,
-        inverse_scheduler=DPMSolverMultistepInverseScheduler,
-        hyperparams={
-            "half_precision": True,
-        },
-    )
+    generator = get_tree_ring_generator(model, scheduler)
 
     # generator = TreeRingImageGenerator(
     #     model="stabilityai/stable-diffusion-2-1-base",
@@ -209,6 +204,8 @@ def eval_fid(gt_folder, unwatermarked_folder, watermarked_folder):
 @click.option("--keys_folder", default="outputs/keys", show_default=True, help="Path to keys folder")
 @click.option("--masks_folder", default="outputs/masks", show_default=True, help="Path to masks folder")
 @click.option("--attack", help="Attack to evaluate against from [rotation, blur]")
+@click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
+@click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 def main(
     processed_file,
     gt_folder,
@@ -217,6 +214,8 @@ def main(
     keys_folder,
     masks_folder,
     attack=None,
+    model="stabilityai/stable-diffusion-2-1-base",
+    scheduler="DPMSolverMultistepScheduler",
 ):
     
     if attack is not None:
@@ -269,7 +268,14 @@ def main(
         masks.append(mask)
 
     auc_val, tpr = eval_auc_and_tpr(
-        images, unwatermarked_temp, watermarked_temp, keys, masks, attack=attack
+        images,
+        unwatermarked_temp,
+        watermarked_temp,
+        keys,
+        masks,
+        attack=attack,
+        model=model,
+        scheduler=scheduler,
     )
 
     delete_temp_folder(gt_temp)

@@ -1,7 +1,9 @@
 import torch
 from torchvision import transforms
 from inversable_stable_diffusion import InversableStableDiffusionPipeline
-from diffusers import DDIMScheduler, DDIMInverseScheduler
+from diffusers import (DPMSolverMultistepInverseScheduler,
+                           DPMSolverMultistepScheduler)
+from diffusers import (DDIMScheduler, DDIMInverseScheduler)
 from typing import Optional
 from PIL.Image import Image
 from functools import partial
@@ -282,6 +284,28 @@ class TreeRingImageGenerator(ImageGenerator):
             )
         return results
 
+def get_tree_ring_generator(model, scheduler):
+    # "stabilityai/stable-diffusion-2-1-base"
+
+    if scheduler == "DPMSolverMultistepScheduler":
+        scheduler = DPMSolverMultistepScheduler
+        inverse_scheduler = DPMSolverMultistepInverseScheduler
+    elif scheduler == "DDIMScheduler":
+        scheduler = DDIMScheduler
+        inverse_scheduler = DDIMInverseScheduler
+    else:
+        raise Exception(f"Not supported scheduler {scheduler} requested")
+
+    generator = TreeRingImageGenerator(
+        model=model,
+        scheduler=scheduler,
+        inverse_scheduler=inverse_scheduler,
+        hyperparams={
+            "half_precision": True,
+        }
+    )
+
+    return generator
 
 if __name__ == "__main__":
     # from diffusers import DPMSolverMultistepScheduler, DPMSolverMultistepInverseScheduler

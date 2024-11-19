@@ -4,10 +4,9 @@ import os
 import shutil
 
 import click
-from diffusers import DPMSolverMultistepInverseScheduler, DPMSolverMultistepScheduler
 from PIL import Image, UnidentifiedImageError
 
-from image_generators import TreeRingImageGenerator
+from image_generators import get_tree_ring_generator
 
 def save_latent(save_path, image_id, latents):
     # Save tensor to a .pkl file
@@ -66,12 +65,16 @@ def delete_temp_folder(temp_folder: str):
 @click.option("--watermarked_folder", default="outputs/watermarked", show_default=True, help="Path to watermarked images folder")
 @click.option("--output_folder", default="reversed_latents", show_default=True, help="Folder to output reversed latents to")
 @click.option("--resume", is_flag=True, show_default=True, default=True, help="Resume from previous run.")
+@click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
+@click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 def main(
     processed_file,
     unwatermarked_folder,
     watermarked_folder,
     output_folder,
     resume=True,
+    model="stabilityai/stable-diffusion-2-1-base",
+    scheduler="DPMSolverMultistepScheduler",
 ):
     if not resume or not os.path.exists(output_folder):
         if os.path.exists(output_folder):
@@ -92,13 +95,7 @@ def main(
     unwatermarked_temp = copy_to_temp_folder(images, unwatermarked_folder)
     watermarked_temp = copy_to_temp_folder(images, watermarked_folder)
 
-    generator = TreeRingImageGenerator(
-        scheduler=DPMSolverMultistepScheduler,
-        inverse_scheduler=DPMSolverMultistepInverseScheduler,
-        hyperparams={
-            "half_precision": True,
-        },
-    )
+    generator = get_tree_ring_generator(model, scheduler)
 
     # load masks + prune broken masks/images
     for image in images[:]:

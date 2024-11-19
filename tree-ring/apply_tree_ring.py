@@ -5,15 +5,10 @@ import shutil
 import torch
 from datasets import load_dataset
 import click
-from image_generators import TreeRingImageGenerator
+from image_generators import get_tree_ring_generator
 from PIL import ImageFilter
 from utils import visualize_tensor
 from watermark import fft
-
-from diffusers import (DPMSolverMultistepInverseScheduler,
-                           DPMSolverMultistepScheduler)
-from diffusers import (DDIMScheduler, DDIMInverseScheduler)
-
 
 def get_unique_seed(i):
     i_str = str(i)
@@ -53,13 +48,17 @@ def get_captions(hf_dataset, split=None, num_files_to_process=-1, with_gt_id=Fal
 @click.option("--channel", default=0, show_default=True, help="Channel to put tree-ring watermark in.")
 @click.option("--num_files_to_process", default=-1, show_default=True, help="The number of files to actually process.")
 @click.option("--resume", is_flag=True, show_default=True, default=True, help="Resume from previous run.")
+@click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
+@click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 def main(
     hf_dataset,
     output_folder,
     split=None,
     num_files_to_process=-1,
     channel=0,
-    resume=True
+    resume=True,
+    model="stabilityai/stable-diffusion-2-1-base",
+    scheduler="DPMSolverMultistepScheduler",
 ):
     """Generates watermarked/non-watermarked images"""
     if not resume or not os.path.exists(output_folder):
@@ -72,23 +71,7 @@ def main(
         os.mkdir(os.path.join(output_folder, "masks"))
         os.mkdir(os.path.join(output_folder, "captions"))
 
-    generator = TreeRingImageGenerator(
-        model="stabilityai/stable-diffusion-2-1-base",
-        scheduler=DPMSolverMultistepScheduler,
-        inverse_scheduler=DPMSolverMultistepInverseScheduler,
-        hyperparams={
-            "half_precision": True,
-        }
-    )
-
-    # generator = TreeRingImageGenerator(
-    #     model="stabilityai/stable-diffusion-2-1-base",
-    #     scheduler=DDIMScheduler,
-    #     inverse_scheduler=DDIMInverseScheduler,
-    #     hyperparams={
-    #         "half_precision": True,
-    #     }
-    # )
+    generator = get_tree_ring_generator(model, scheduler)
 
     captions, gt_ids = get_captions(
         hf_dataset,
