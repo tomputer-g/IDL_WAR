@@ -1,3 +1,6 @@
+# Description
+Reimplementation the Tree-Ring algorithm described in https://arxiv.org/abs/2305.20030.
+
 # Environment setup
 Set up conda environment:
 
