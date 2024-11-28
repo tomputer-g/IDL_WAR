@@ -1,0 +1,11 @@
+diffusers>=0.21.0
+transformers
+huggingface_hub>=0.25.0
+accelerate
+numpy
+scipy
+matplotlib
+datasets
+scikit-learn
+pillow
+pytorch-fid

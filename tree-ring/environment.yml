@@ -1,0 +1,25 @@
+name: tree-ring
+channels:
+ - pytorch
+ - nvidia
+ - conda-forge
+ - defaults
+dependencies:
+ - python==3.10.*
+ - pip
+ - pytorch
+ - torchvision
+ - pytorch-cuda==11.8
+ - pip:
+    - diffusers==0.21.*
+    - transformers
+    - huggingface_hub==0.25.0
+    - accelerate
+    - numpy
+    - xformers
+    - scipy
+    - matplotlib
+    - datasets
+    - scikit-learn
+    - pillow
+    - pytorch-fid
