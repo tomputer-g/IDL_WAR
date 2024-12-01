@@ -57,7 +57,6 @@ class GradCAMStegaStamp:
 
         if with_gradcam:
             cam = compute_gradcam(self.sess, image, self.input_image, self.output_secret_sigmoid, self.last_conv_layer)
-            print(8)
             # Resize CAM to match input image size
             cam_resized = cv2.resize(cam, (400, 400))
 
