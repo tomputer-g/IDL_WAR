@@ -6,14 +6,16 @@ channels:
 dependencies:
   - python==3.6.11
   - pip==21.3.1
-  - tensorflow-gpu==1.14.0
   - opencv==3.4.3
   - pillow==5.4.1
   - cudatoolkit=10.0
+  - cudnn=7.4
   - numpy=1.16
   - protobuf=3.6
   - absl-py=0.7
   - matplotlib
+  - tqdm
   - pip:
     - bchlib==0.7
     - stn==1.0.1
+    - tensorflow-gpu==1.14.0

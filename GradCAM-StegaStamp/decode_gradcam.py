@@ -6,10 +6,69 @@ import tensorflow as tf
 from tensorflow.python.saved_model import tag_constants
 from tensorflow.python.saved_model import signature_constants
 import cv2
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+
 
 BCH_POLYNOMIAL = 137
 BCH_BITS = 5
+
+class GradCAMStegaStamp:
+    def __init__(self, model, secret_size):
+        self.sess = tf.InteractiveSession(graph=tf.Graph())
+
+        model = tf.saved_model.loader.load(self.sess, [tag_constants.SERVING], model)
+
+        input_image_name = model.signature_def[signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY].inputs['image'].name
+        self.input_image = tf.get_default_graph().get_tensor_by_name(input_image_name)
+
+        output_secret_name = model.signature_def[signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY].outputs['decoded'].name
+        self.output_secret = tf.get_default_graph().get_tensor_by_name(output_secret_name)
+
+        #The model ends with a sigmoid and then a rounding operation. The rounding destroys the gradient information and makes it return None.
+        #Instead we get the output of any layer before rounding and use it to compute the gradient
+        output_secret_sigmoid_name = 'Sigmoid:0' #'stega_stamp_decoder_1/sequential_1/dense_3/BiasAdd:0' 
+        self.output_secret_sigmoid = tf.get_default_graph().get_tensor_by_name(output_secret_sigmoid_name)
+
+        # # Iterate through operations and print output tensor names (for debugging and picking our output layer)
+        # for op in tf.get_default_graph().get_operations():
+        #     print(op.name)
+        #     for output in op.outputs:
+        #         print(" ", output.name)
+
+        conv_layers = [op for op in self.sess.graph.get_operations() if op.type == 'Conv2D']
+        self.last_conv_layer = conv_layers[-1].outputs[0]
+        self.bch = bchlib.BCH(BCH_POLYNOMIAL, BCH_BITS)
+
+    def get_message(self, image_filename, with_gradcam=True):
+        image = Image.open(image_filename).convert("RGB")
+        image = np.array(ImageOps.fit(image,(400, 400)),dtype=np.float32)
+        image /= 255.
+        feed_dict = {self.input_image:[image]}
+
+        secret = self.sess.run([self.output_secret],feed_dict=feed_dict)[0][0]
+        packet_binary = "".join([str(int(bit)) for bit in secret[:96]])
+        packet = bytes(int(packet_binary[i : i + 8], 2) for i in range(0, len(packet_binary), 8))
+        packet = bytearray(packet)
+        data, ecc = packet[:-self.bch.ecc_bytes], packet[-self.bch.ecc_bytes:]
+        bitflips = self.bch.decode_inplace(data, ecc)
+
+        if with_gradcam:
+            cam = compute_gradcam(self.sess, image, self.input_image, self.output_secret_sigmoid, self.last_conv_layer)
+            print(8)
+            # Resize CAM to match input image size
+            cam_resized = cv2.resize(cam, (400, 400))
+
+        if bitflips != -1:
+            code = data.decode("utf-8")
+        else:
+            code = None
+
+        del cam
+
+        return (code, cam_resized.numpy()) if with_gradcam else code
 
 def compute_gradcam(sess, image, input_tensor, output_tensor, conv_layer):
     # Get the gradient of the output with respect to the conv layer
@@ -31,11 +90,20 @@ def compute_gradcam(sess, image, input_tensor, output_tensor, conv_layer):
     cam = tf.maximum(cam, 0) / tf.reduce_max(cam)
     
     # Run the session to get the CAM
-    cam_value = sess.run(cam, feed_dict={input_tensor: [image]})
+    try:
+        cam_value = sess.run(cam, feed_dict={input_tensor: [image]})
+    except:
+        print("error")
+        cam_value = None
 
     # Run the print
     # sess.run(printdebug, feed_dict={input_tensor: [image]})
     
+    del loss
+    del grads
+    del weights
+    del cam
+
     return cam_value[0]
 
 def main():
