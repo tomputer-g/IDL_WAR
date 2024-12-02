@@ -5,12 +5,16 @@ import os
 from tqdm import tqdm
 from decode_gradcam import GradCAMStegaStamp
 
-def attack(gradcam_model, wm_img_filename, percentile_threshold, blur_size):
+def attack(gradcam_model, wm_img_filename, percentile_threshold, blur_size, gradcam_filename=None):
     wm_img = cv2.imread(wm_img_filename)
 
     attacked = wm_img.copy()
-    _, gradcam = gradcam_model.get_message(wm_img_filename, with_gradcam=True)
-    # gradcam = np.abs(gradcam)
+
+    if gradcam_filename is None:
+        _, gradcam = gradcam_model.get_message(wm_img_filename, with_gradcam=True)
+    else:
+        gradcam = np.load(gradcam_filename)
+    gradcam = np.abs(gradcam)
 
     if percentile_threshold < 0:
         mask = np.ones_like(attacked, dtype=bool)
@@ -20,8 +24,6 @@ def attack(gradcam_model, wm_img_filename, percentile_threshold, blur_size):
     blurred_image = cv2.blur(attacked, (blur_size, blur_size))
     attacked[mask] = blurred_image[mask]
     
-    # attacked = cv2.blur(attacked, (3, 3))
-
     return attacked    
 
 def main():
@@ -30,6 +32,7 @@ def main():
     parser.add_argument('model', type=str)
     parser.add_argument('--secret_size', type=int, default=100)
     parser.add_argument('--wm_images_dir', type=str)
+    parser.add_argument('--gradcam_results_dir', type=str, default=None)
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--percentile_threshold', type=int, default=70)
     parser.add_argument('--blur_size', type=int, default=11)
@@ -43,16 +46,16 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     for wm_filename in tqdm(wm_files_list):
-        print(wm_filename)
         file_id = os.path.basename(wm_filename).split("_")[0]
 
-        try:
-            cv2.imwrite(
-                os.path.join(output_dir, f"{file_id}_attacked.png"),
-                attack(gradcam_model, wm_filename, args.percentile_threshold, args.blur_size)
-            )
-        except:
-            continue
+        gradcam_filename = None
+        if args.gradcam_results_dir is not None:
+            gradcam_filename = os.path.join(args.gradcam_results_dir, f"{file_id}_gradcam.npy")
+
+        cv2.imwrite(
+            os.path.join(output_dir, f"{file_id}_attacked.png"),
+            attack(gradcam_model, wm_filename, args.percentile_threshold, args.blur_size, gradcam_filename=gradcam_filename)
+        )
 
 
 if __name__ == "__main__":
