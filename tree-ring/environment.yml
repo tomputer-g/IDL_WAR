@@ -6,20 +6,20 @@ channels:
  - defaults
 dependencies:
  - python==3.10.*
- - pip
- - pytorch
- - torchvision
+ - pip==24.3.1
+ - pytorch==2.5.1
+ - torchvision==0.20.1
  - pytorch-cuda==11.8
  - pip:
     - diffusers==0.21.*
-    - transformers
+    - transformers==4.46.2
     - huggingface_hub==0.25.0
-    - accelerate
-    - numpy
-    - xformers
-    - scipy
-    - matplotlib
-    - datasets
-    - scikit-learn
-    - pillow
-    - pytorch-fid
+    - accelerate==1.1.1
+    - numpy==2.1.3
+    - xformers==0.0.28.post3
+    - scipy==1.14.1
+    - matplotlib==3.9.2
+    - datasets==3.1.0
+    - scikit-learn==1.5.2
+    - pillow==11.0.0
+    - pytorch-fid==0.3.0
