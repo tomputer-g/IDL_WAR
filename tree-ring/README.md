@@ -13,7 +13,9 @@ Download data:
 
 ```
 wget http://images.cocodataset.org/zips/val2017.zip
+sudo apt install unzip
 unzip val2017.zip
+rm val2017.zip
 ```
 
 # Reproducing Results
@@ -81,8 +83,8 @@ Options:
                                outputs/watermarked]
   --keys_folder TEXT           Path to keys folder  [default: outputs/keys]
   --masks_folder TEXT          Path to masks folder  [default: outputs/masks]
-  --attack TEXT                Attack to evaluate against from [rotation,
-                               blur]
+  --attack TEXT                Attack to evaluate against from [none,
+                               rotation, blur]
   --model TEXT                 Diffusion model to use  [default:
                                stabilityai/stable-diffusion-2-1-base]
   --scheduler TEXT             Scheduler to use from

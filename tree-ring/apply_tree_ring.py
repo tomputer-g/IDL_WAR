@@ -127,5 +127,4 @@ def main(
 
 
 if __name__ == "__main__":
-    # main("phiyodr/coco2017", "", "outputs", split="validation", num_files_to_process=-1, resume=True)
     main()

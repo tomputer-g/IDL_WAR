@@ -9,7 +9,8 @@ dependencies:
  - pip==24.3.1
  - pytorch==2.5.1
  - torchvision==0.20.1
- - pytorch-cuda==11.8
+ - pytorch-cuda==12.1
+ - click==8.1.7
  - pip:
     - diffusers==0.21.*
     - transformers==4.46.2

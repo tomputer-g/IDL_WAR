@@ -15,6 +15,8 @@ from sklearn.metrics import auc, roc_curve
 from image_generators import get_tree_ring_generator
 
 def get_attack(attack_name):
+    if attack_name == "none":
+        return lambda img: img
     if attack_name == "rotation":
         return lambda img: img.rotate(75)
     if attack_name == "blur":
@@ -203,7 +205,7 @@ def eval_fid(gt_folder, unwatermarked_folder, watermarked_folder):
 @click.option("--watermarked_folder", default="outputs/watermarked", show_default=True, help="Path to watermarked images folder")
 @click.option("--keys_folder", default="outputs/keys", show_default=True, help="Path to keys folder")
 @click.option("--masks_folder", default="outputs/masks", show_default=True, help="Path to masks folder")
-@click.option("--attack", help="Attack to evaluate against from [rotation, blur]")
+@click.option("--attack", default="none", show_default=True, help="Attack to evaluate against from [none, rotation, blur]")
 @click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
 @click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 def main(
