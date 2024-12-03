@@ -25,8 +25,8 @@ Commands to run:
  2. `python eval_tree_ring.py` (evaluate with no attacks)
  3. `python eval_tree_ring.py --attack rotation` (evaluate with 75 degree rotation)
  4. `python eval_tree_ring.py --attack blur` (evaluate with radius 4 Gaussian blurring)
- <!-- 5. `python apply_tree_ring --key_file example_good_key.pt --num_files_to_process 1000 --output_folder outputs_single_key` (generate tree-ring images with good key)
- 6. `python eval_tree_ring.py` -->
+ 5. `python apply_tree_ring.py --key_file example_good_key.pt --num_files_to_process 1000 --output_folder outputs_single_key` (generate tree-ring images with good key)
+ 6. `python eval_tree_ring.py --results_folder outputs_single_key` (evaluate with single key)
  7. (Optional) `python get_reversed_latents.py --save_visualizations_instead` to visualize renoised latents
 
 # Generate Tree-Ring Images

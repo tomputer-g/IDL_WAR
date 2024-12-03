@@ -14,13 +14,22 @@ from sklearn.metrics import auc, roc_curve
 
 from image_generators import get_tree_ring_generator
 
+def identity(img):
+    return img
+
+def rotation_attack(img):
+    return img.rotate(75)
+
+def blur_attack(img):
+    return img.filter(ImageFilter.GaussianBlur(radius=4))
+
 def get_attack(attack_name):
     if attack_name == "none":
-        return lambda img: img
+        return identity
     if attack_name == "rotation":
-        return lambda img: img.rotate(75)
+        return rotation_attack
     if attack_name == "blur":
-        return lambda img: img.filter(ImageFilter.GaussianBlur(radius=4))
+        return blur_attack
     
     raise Exception(f"Unimplemented attack {attack_name} requested")
 
@@ -125,8 +134,8 @@ def eval_auc_and_tpr(
             })
 
     for true_label, p_val in precalculated_data.values():
-        # probabilities.append(1 - p_val)
-        watermarked_prob = -p_val
+        probabilities.append(1 - p_val)
+        # watermarked_prob = -p_val
         true_labels.append(true_label)
 
     for i, image in enumerate(images):
@@ -199,22 +208,14 @@ def eval_fid(gt_folder, unwatermarked_folder, watermarked_folder):
     return unwatermarked_fid, watermarked_fid
 
 @click.command()
-@click.option("--processed_file", default="outputs/processed.txt", show_default=True, help="Path to processed.txt")
 @click.option("--gt_folder", default="val2017", show_default=True, help="Path to ground truth folder")
-@click.option("--unwatermarked_folder", default="outputs/unwatermarked", show_default=True, help="Path to unwatermarked images folder")
-@click.option("--watermarked_folder", default="outputs/watermarked", show_default=True, help="Path to watermarked images folder")
-@click.option("--keys_folder", default="outputs/keys", show_default=True, help="Path to keys folder")
-@click.option("--masks_folder", default="outputs/masks", show_default=True, help="Path to masks folder")
+@click.option("--results_folder", default="outputs/", show_default=True, help="Path to results folder from apply_tree_ring.py")
 @click.option("--attack", default="none", show_default=True, help="Attack to evaluate against from [none, rotation, blur]")
 @click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
 @click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 def main(
-    processed_file,
     gt_folder,
-    unwatermarked_folder,
-    watermarked_folder,
-    keys_folder,
-    masks_folder,
+    results_folder="outputs/",
     attack=None,
     model="stabilityai/stable-diffusion-2-1-base",
     scheduler="DPMSolverMultistepScheduler",
@@ -222,6 +223,12 @@ def main(
     
     if attack is not None:
         attack = get_attack(attack)
+
+    processed_file = os.path.join(results_folder, "processed.txt")
+    unwatermarked_folder = os.path.join(results_folder, "unwatermarked")
+    watermarked_folder = os.path.join(results_folder, "watermarked")
+    keys_folder = os.path.join(results_folder, "keys")
+    masks_folder = os.path.join(results_folder, "masks")
 
     with open(processed_file, mode="r") as f:
         images = [line.strip() for line in f.readlines()]

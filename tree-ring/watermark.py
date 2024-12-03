@@ -194,10 +194,32 @@ def l1_dist(
 
     return dist
 
-def detect_pval(latent_tensor, key, mask, p_val_thresh=0.01) -> tuple[float, bool]:
-    p_val = p_value(latent_tensor, key, mask)
+def detect_pval(
+    latent_tensor,
+    key,
+    mask,
+    p_val_thresh=0.01,
+    visualize_renoised=False,
+    visualization_folder="",
+    visualization_name="",
+) -> tuple[float, bool]:
+    p_val = p_value(
+        latent_tensor,
+        key,
+        mask,
+        visualize_renoised=visualize_renoised,
+        visualization_folder=visualization_folder,
+        visualization_name=visualization_name,
+    )
     return float(p_val), bool(p_val < p_val_thresh)
 
 def detect_dist(latent_tensor, key, mask, dist_thresh=77) -> tuple[float, bool]:
-    dist = l1_dist(latent_tensor, key, mask)
+    dist = l1_dist(
+        latent_tensor,
+        key,
+        mask,
+        visualize_renoised=visualize_renoised,
+        visualization_folder=visualization_folder,
+        visualization_name=visualization_name,
+    )
     return float(dist), bool(dist < dist_thresh)
