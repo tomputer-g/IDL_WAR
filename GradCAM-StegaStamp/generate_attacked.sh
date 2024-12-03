@@ -57,7 +57,23 @@ then
         for j in 5 11 31
         do
             echo $i $j
-            python attack_residuals.py --wm_images_for_residuals_dir ../../StegaStamp/data/watermarked_Hello --wm_images_dir ../../StegaStamp/data/watermarked_Stega\!\!/ --unwm_images_dir ../../StegaStamp/data/unwatermarked --output_dir residuals_attacked_diff_message/residuals_attacked_diff_message --percentile_threshold $i --blur_size $j
+            python attack_residuals.py --wm_images_dir $2 \
+                                       --wm_images_for_residuals_dir $3 \
+                                       --unwm_images_dir $4 \
+                                       --output_dir residuals_attacked_diff_message/residuals_attacked_diff_message \
+                                       --percentile_threshold $i \
+                                       --blur_size $j
         done
+    done
+fi
+
+if [ "$attack" = "blur" ];
+then
+    for j in 5 11 31
+    do
+        echo $j
+        python attack_blur.py --wm_images_dir $2 \
+                              --output_dir $3 \
+                              --blur_size $j
     done
 fi
