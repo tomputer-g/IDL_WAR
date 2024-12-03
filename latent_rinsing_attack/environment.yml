@@ -1,0 +1,16 @@
+name: latent_rinsing_env
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip=24.3.1
+  - tqdm=4.67.1
+  - pytorch=2.5.1
+  - pytorch-cuda=11.8
+  - pip:
+    - diffusers==0.31.0
+    - transformers==4.46.3
+    - accelerate==1.1.1
