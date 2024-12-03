@@ -7,6 +7,7 @@ import click
 from PIL import Image, UnidentifiedImageError
 
 from image_generators import get_tree_ring_generator
+from utils import visualize_latent
 
 def save_latent(save_path, image_id, latents):
     # Save tensor to a .pkl file
@@ -64,6 +65,7 @@ def delete_temp_folder(temp_folder: str):
 @click.option("--unwatermarked_folder", default="outputs/unwatermarked", show_default=True, help="Path to unwatermarked images folder")
 @click.option("--watermarked_folder", default="outputs/watermarked", show_default=True, help="Path to watermarked images folder")
 @click.option("--output_folder", default="reversed_latents", show_default=True, help="Folder to output reversed latents to")
+@click.option("--save_visualizations_instead", default=False, show_default=True, is_flag=True, help="Whether to only save the visualizations of the latents")
 @click.option("--resume", is_flag=True, show_default=True, default=True, help="Resume from previous run.")
 @click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
 @click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
@@ -72,6 +74,7 @@ def main(
     unwatermarked_folder,
     watermarked_folder,
     output_folder,
+    save_visualizations_instead=False,
     resume=True,
     model="stabilityai/stable-diffusion-2-1-base",
     scheduler="DPMSolverMultistepScheduler",
@@ -113,14 +116,18 @@ def main(
         unwatermarked_latents = generator.renoise_images([unwatermarked])
         watermarked_latents = generator.renoise_images([watermarked])
 
-        save_latent(
-            os.path.join(output_folder, "unwatermarked"),
-            image[:-4],
-            unwatermarked_latents,
-        )
-        save_latent(
-            os.path.join(output_folder, "watermarked"), image[:-4], watermarked_latents
-        )
+        if not save_visualizations_instead:
+            save_latent(
+                os.path.join(output_folder, "unwatermarked"),
+                image[:-4],
+                unwatermarked_latents,
+            )
+            save_latent(
+                os.path.join(output_folder, "watermarked"), image[:-4], watermarked_latents
+            )
+        else:
+            visualize_latent(unwatermarked_latents, name=os.path.join(output_folder, "unwatermarked", image[:-4]))
+            visualize_latent(watermarked_latents, name=os.path.join(output_folder, "watermarked", image[:-4]))
 
         processed.add(image)
         with open(os.path.join(output_folder, "processed.txt"), mode="a") as f:

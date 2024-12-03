@@ -47,6 +47,10 @@ Options:
   --scheduler TEXT                Scheduler to use from
                                   [DPMSolverMultistepScheduler, DDIMScheduler]
                                   [default: DPMSolverMultistepScheduler]
+  --visualize_keys                Save visualizations of the key in the
+                                  fourier space.
+  --key_file TEXT                 Key file to use for watermarking if want
+                                  specific key.
   --help                          Show this message and exit.
 ```
 
@@ -55,6 +59,8 @@ Outputs:
 outputs/
 ├── captions
 |   └── text files with the caption used to generate each image
+├── key_visualizations (if used --visualize_keys)
+|   └── images of the key in the fourier space (separated by real and imaginary)
 ├── keys
 |   ├── .pt files containing the keys used to watermark the images
 |   └── can be loaded using torch.load()

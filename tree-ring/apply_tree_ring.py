@@ -51,9 +51,7 @@ def get_captions(hf_dataset, split=None, num_files_to_process=-1, with_gt_id=Fal
 @click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
 @click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 @click.option("--visualize_keys", is_flag=True, show_default=True, default=False, help="Save visualizations of the key in the fourier space.")
-@click.option("--visualization_path", default=".", help="Path to save visualizations to if visualize_keys is set.")
 @click.option("--key_file", default=None, help="Key file to use for watermarking if want specific key.")
-def main(
 def main(
     hf_dataset,
     output_folder,
@@ -64,7 +62,7 @@ def main(
     model="stabilityai/stable-diffusion-2-1-base",
     scheduler="DPMSolverMultistepScheduler",
     visualize_keys=False,
-    key_file=None
+    key_file=None,
 ):
     """Generates watermarked/non-watermarked images"""
     if not resume or not os.path.exists(output_folder):
@@ -77,8 +75,8 @@ def main(
         os.mkdir(os.path.join(output_folder, "masks"))
         os.mkdir(os.path.join(output_folder, "captions"))
 
-        if visualize_keys:
-            os.mkdir(os.path.join(output_folder, "key_visualizations"))
+    if visualize_keys:
+        os.makedirs(os.path.join(output_folder, "key_visualizations"), exist_ok=True)
 
     generator = get_tree_ring_generator(model, scheduler)
 
@@ -113,7 +111,7 @@ def main(
             rng_generator=rng_generator,
             channel=channel,
             key=single_key,
-            visualize_key=visualize_key,
+            visualize_key=visualize_keys,
             visualization_folder=os.path.join(output_folder, "key_visualizations"),
             visualization_name=gt_id
         )

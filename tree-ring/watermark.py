@@ -1,7 +1,8 @@
 import torch
 from scipy.stats import ncx2
+import os
 
-from utils import visualize_tensor
+from utils import visualize_tensor, fft, ifft
 
 
 # add watermark to noise, returns key
@@ -45,19 +46,6 @@ def watermark(
 
     # return key, mask, and new latent
     return latent_tensor, key, mask
-
-
-# perform fast fourier transform on latents
-# use fftshift to move lower frequency components to the center
-# where we will put our watermark
-def fft(latent_tensor):
-    return torch.fft.fftshift(torch.fft.fft2(latent_tensor), dim=(-1, -2))
-
-
-# inverse fast fourier transform on latents
-def ifft(fft_latent_tensor):
-    return torch.fft.ifft2(torch.fft.ifftshift(fft_latent_tensor, dim=(-1, -2)))
-
 
 # generate the 2D watermark key values
 def generate_key(
