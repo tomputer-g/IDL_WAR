@@ -16,6 +16,14 @@ wget http://images.cocodataset.org/zips/val2017.zip
 unzip val2017.zip
 ```
 
+# Reproducing Results
+
+Commands to run:
+ 1. `python apply_tree_ring.py`
+ 2. `python eval_tree_ring.py`
+ 3. `python eval_tree_ring.py --attack rotation`
+ 4. `python eval_tree_ring.py --attack blur`
+
 # Generate Tree-Ring Images
 ```python apply_tree_ring.py```
 
