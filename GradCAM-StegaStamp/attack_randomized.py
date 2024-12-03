@@ -43,10 +43,11 @@ def main():
 
     for wm_filename in tqdm(wm_files_list):
         file_id = os.path.basename(wm_filename).split("_")[0]
+        gradcam_filename = os.path.join(args.gradcams_dir, f"{file_id}_gradcam.npy")
 
         cv2.imwrite(
             os.path.join(output_dir, f"{file_id}_attacked.png"),
-            attack(wm_filename, args.percentile_threshold, args.blur_size)
+            attack(wm_filename, gradcam_filename, args.percentile_threshold, args.blur_size)
         )
 
 
