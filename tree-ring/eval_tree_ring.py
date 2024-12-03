@@ -104,15 +104,6 @@ def eval_auc_and_tpr(
 ):
     generator = get_tree_ring_generator(model, scheduler)
 
-    # generator = TreeRingImageGenerator(
-    #     model="stabilityai/stable-diffusion-2-1-base",
-    #     scheduler=DDIMScheduler,
-    #     inverse_scheduler=DDIMInverseScheduler,
-    #     hyperparams={
-    #         "half_precision": True,
-    #     }
-    # )
-
     probabilities = []
     true_labels = []
 
@@ -144,10 +135,10 @@ def eval_auc_and_tpr(
             watermarked = Image.open(os.path.join(watermarked_folder, image))
 
             if attack is not None:
-                watermarked.save("debug_unattacked.jpg")
+                # watermarked.save("debug_unattacked.jpg")
                 unwatermarked = attack(unwatermarked)
                 watermarked = attack(watermarked)
-                watermarked.save("debug_attacked.jpg")
+                # watermarked.save("debug_attacked.jpg")
 
         except UnidentifiedImageError:
             print(f"{image} has a broken image file. Please regenerate.")
