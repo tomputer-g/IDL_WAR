@@ -1,6 +1,6 @@
-attack = $1
+attack="$1"
 
-if [$attack -eq "gradcam"];
+if [ "$attack" = "gradcam" ];
 then
     for i in $(seq 0 25 75);
     do
@@ -18,7 +18,7 @@ then
     done
 fi
 
-if [$attack -eq "randomized"];
+if [ "$attack" = "randomized" ];
 then
     for i in $(seq 0 25 75);
     do
@@ -34,7 +34,7 @@ then
     done
 fi
 
-if [$attack -eq "residuals"];
+if [ "$attack" = "residuals" ];
 then
     for i in $(seq 0 25 75)
     do
@@ -50,7 +50,7 @@ then
     done
 fi
 
-if [$attack -eq "residuals_diff_message"];
+if [ "$attack" = "residuals_diff_message" ];
 then
     for i in $(seq 0 25 75)
     do
