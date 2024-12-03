@@ -33,7 +33,7 @@ def main():
     args = parser.parse_args()
 
     if args.wm_images_for_residuals_dir is None:
-        args.wm_images_for_residuals_dir = args.wm_images
+        args.wm_images_for_residuals_dir = args.wm_images_dir
 
     # wm_files_list = sorted(glob.glob(args.wm_images_dir + '/*'), key=lambda x: os.path.basename(x).split(".")[0])
     unwm_files_list = sorted(glob.glob(args.unwm_images_dir + '/*'), key=lambda x: os.path.basename(x).split(".")[0])
@@ -57,7 +57,7 @@ def main():
 
         cv2.imwrite(
             os.path.join(output_dir, f"{file_id}_attacked.png"),
-            attack(wm_img, unwm_img, args.percentile_threshold, args.blur_size)
+            attack(wm_img, unwm_img, args.percentile_threshold, args.blur_size, for_residual=wm_for_residual)
         )
 
 

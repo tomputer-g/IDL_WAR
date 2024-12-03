@@ -4,17 +4,20 @@ import cv2
 import os
 from tqdm import tqdm
 
-def attack(wm_img_filename, percentile_threshold, blur_size):
+def attack(wm_img_filename, gradcam_filename, percentile_threshold, blur_size):
     wm_img = cv2.imread(wm_img_filename)
 
     attacked = wm_img.copy()
-    randomized = np.random.randn(*wm_img.shape)
-    # gradcam = np.abs(gradcam)
+    gradcam = np.load(gradcam_filename)
+    gradcam = np.abs(gradcam)
 
     if percentile_threshold < 0:
         mask = np.ones_like(attacked, dtype=bool)
     else:
-        mask = randomized > np.percentile(randomized, percentile_threshold)
+        gradcam_mask = gradcam > np.percentile(gradcam, percentile_threshold)
+        percentage = gradcam_mask.sum() / np.prod(gradcam_mask.shape)
+        randomized = np.random.randn(*wm_img.shape)
+        mask = randomized > percentage
 
     blurred_image = cv2.blur(attacked, (blur_size, blur_size))
     attacked[mask] = blurred_image[mask]
@@ -27,6 +30,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--wm_images_dir', type=str)
+    parser.add_argument('--gradcams_dir', type=str)
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--percentile_threshold', type=int, default=70)
     parser.add_argument('--blur_size', type=int, default=11)
