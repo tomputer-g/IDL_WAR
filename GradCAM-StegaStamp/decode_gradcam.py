@@ -6,10 +6,6 @@ import tensorflow as tf
 from tensorflow.python.saved_model import tag_constants
 from tensorflow.python.saved_model import signature_constants
 import cv2
-# import matplotlib.pyplot as plt
-
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
 
 
 BCH_POLYNOMIAL = 137
