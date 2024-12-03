@@ -229,6 +229,9 @@ class TreeRingImageGenerator(ImageGenerator):
         rng_generator: Optional[torch.Generator] = None,
         channel: int = 0,
         key: torch.Tensor = None,
+        visualize_key: bool = False,
+        visualization_folder: str = "",
+        visualization_name: str = "",
     ) -> tuple[list[Image], list[torch.Tensor], list[torch.Tensor]]:
         latents = self._generate_initial_noise(len(prompts), rng_generator)
 
@@ -244,7 +247,10 @@ class TreeRingImageGenerator(ImageGenerator):
                 self.radius,
                 device=self.device,
                 channel=channel,
-                key=key
+                key=key,
+                visualize_key=visualize_key,
+                visualization_folder=visualization_folder,
+                visualization_name=visualization_name,
             )
             latents[i] = tensor
             keys.append(key)
@@ -268,11 +274,26 @@ class TreeRingImageGenerator(ImageGenerator):
         use_pval: bool = True,
         p_val_thresh: float = 0.01,
         dist_thresh: float = 77,
+        visualize_renoised: bool = False,
+        visualization_folder: str = "",
+        visualization_name: str = "",
     ) -> list[bool]:
         if use_pval:
-            detect = partial(detect_pval, p_val_thresh=p_val_thresh)
+            detect = partial(
+                detect_pval,
+                p_val_thresh=p_val_thresh,
+                visualize_renoised=visualize_renoised,
+                visualization_folder=visualization_folder,
+                visualization_name=visualization_name
+            )
         else:
-            detect = partial(detect_dist, dist_thresh=dist_thresh)
+            detect = partial(
+                detect_dist,
+                dist_thresh=dist_thresh,
+                visualize_renoised=visualize_renoised,
+                visualization_folder=visualization_folder,
+                visualization_name=visualization_name
+            )
 
         latents = self.renoise_images(images)
 

@@ -13,6 +13,7 @@ def watermark(
     channel=0,
     key=None,
     visualize_key=False,
+    visualization_folder="",
     visualization_name="",
 ):
     if device is None:
@@ -36,8 +37,8 @@ def watermark(
 
     # useful code for debugging if injected key is reasonable
     if visualize_key:
-        visualize_tensor(fft_applied.real, name=f"{visualization_name}_real.png")
-        visualize_tensor(fft_applied.imag, name=f"{visualization_name}_imag.png")
+        visualize_tensor(fft_applied.real, name=os.path.join(visualization_folder, f"{visualization_name}_real.png"))
+        visualize_tensor(fft_applied.imag, name=os.path.join(visualization_folder, f"{visualization_name}_imag.png"))
 
     # reverse fft
     latent_tensor = ifft(fft_applied).real
@@ -146,6 +147,7 @@ def p_value(
     mask,
     channel=0,
     visualize_renoised=False,
+    visualization_folder="",
     visualization_name="",
 ):
     # apply fft
@@ -180,6 +182,7 @@ def l1_dist(
     mask,
     channel=0,
     visualize_renoised=False,
+    visualization_folder="",
     visualization_name="",
 ):
     # apply fft
