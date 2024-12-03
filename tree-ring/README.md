@@ -44,7 +44,7 @@ Options:
                                   [default: 0]
   --num_files_to_process INTEGER  The number of files to actually process.
                                   [default: -1]
-  --resume                        Resume from previous run.  [default: True]
+  --resume                        Resume from previous run.  [default: False]
   --model TEXT                    Diffusion model to use  [default:
                                   stabilityai/stable-diffusion-2-1-base]
   --scheduler TEXT                Scheduler to use from
@@ -83,23 +83,18 @@ outputs/
 Inputs:
 ```
 Options:
-  --processed_file TEXT        Path to processed.txt  [default:
-                               outputs/processed.txt]
-  --gt_folder TEXT             Path to ground truth folder  [default: val2017]
-  --unwatermarked_folder TEXT  Path to unwatermarked images folder  [default:
-                               outputs/unwatermarked]
-  --watermarked_folder TEXT    Path to watermarked images folder  [default:
-                               outputs/watermarked]
-  --keys_folder TEXT           Path to keys folder  [default: outputs/keys]
-  --masks_folder TEXT          Path to masks folder  [default: outputs/masks]
-  --attack TEXT                Attack to evaluate against from [none,
-                               rotation, blur]  [default: none]
-  --model TEXT                 Diffusion model to use  [default:
-                               stabilityai/stable-diffusion-2-1-base]
-  --scheduler TEXT             Scheduler to use from
-                               [DPMSolverMultistepScheduler, DDIMScheduler]
-                               [default: DPMSolverMultistepScheduler]
-  --help                       Show this message and exit.
+  --gt_folder TEXT       Path to ground truth folder  [default: val2017]
+  --results_folder TEXT  Path to results folder from apply_tree_ring.py
+                         [default: outputs/]
+  --attack TEXT          Attack to evaluate against from [none, rotation,
+                         blur]  [default: none]
+  --model TEXT           Diffusion model to use  [default: stabilityai/stable-
+                         diffusion-2-1-base]
+  --resume               Resume from previous run.
+  --scheduler TEXT       Scheduler to use from [DPMSolverMultistepScheduler,
+                         DDIMScheduler]  [default:
+                         DPMSolverMultistepScheduler]
+  --help                 Show this message and exit.
 ```
 
 Outputs:

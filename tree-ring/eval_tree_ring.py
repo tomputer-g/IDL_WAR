@@ -101,15 +101,22 @@ def eval_auc_and_tpr(
     attack=None,
     model="stabilityai/stable-diffusion-2-1-base",
     scheduler="DPMSolverMultistepScheduler",
+    output_prefix="",
+    resume=True,
 ):
     generator = get_tree_ring_generator(model, scheduler)
 
     probabilities = []
     true_labels = []
 
+    for new_data_file in new_data_files.values():
+        if not resume and os.path.exists(new_data_file):
+            os.remove(new_data_file)
+
     precalculated_data = {}
     for precalculated_data_file in precalculated_data_files.values():
-        if not os.path.exists(precalculated_data_file):
+        precalculated_data_file = output_prefix+precalculated_data_file
+        if not os.path.exists(precalculated_data_file) or not resume:
             continue
 
         with open(precalculated_data_file, mode="r") as f:
@@ -154,9 +161,9 @@ def eval_auc_and_tpr(
             true_labels.append(0)
             probabilities.append(watermarked_prob)
 
-            with open(new_data_files["unwatermarked"], mode="a") as f:
+            with open(output_prefix+new_data_files["unwatermarked"], mode="a") as f:
                 f.write(f"{image},unwatermarked,{0},{p_val}\n")
-            with open(new_data_files["combined"], mode="a") as f:
+            with open(output_prefix+new_data_files["combined"], mode="a") as f:
                 f.write(f"{image},unwatermarked,{0},{p_val}\n")
 
         if (image, "watermarked") not in precalculated_data:
@@ -169,9 +176,9 @@ def eval_auc_and_tpr(
             true_labels.append(1)
             probabilities.append(watermarked_prob)
 
-            with open(new_data_files["watermarked"], mode="a") as f:
+            with open(output_prefix+new_data_files["watermarked"], mode="a") as f:
                 f.write(f"{image},watermarked,{1},{p_val}\n")
-            with open(new_data_files["combined"], mode="a") as f:
+            with open(output_prefix+new_data_files["combined"], mode="a") as f:
                 f.write(f"{image},watermarked,{1},{p_val}\n")
 
     fpr, tpr, _ = roc_curve(true_labels, probabilities)
@@ -203,6 +210,7 @@ def eval_fid(gt_folder, unwatermarked_folder, watermarked_folder):
 @click.option("--results_folder", default="outputs/", show_default=True, help="Path to results folder from apply_tree_ring.py")
 @click.option("--attack", default="none", show_default=True, help="Attack to evaluate against from [none, rotation, blur]")
 @click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
+@click.option("--resume", is_flag=True, show_default=True, default=False, help="Resume from previous run.")
 @click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 def main(
     gt_folder,
@@ -210,6 +218,7 @@ def main(
     attack=None,
     model="stabilityai/stable-diffusion-2-1-base",
     scheduler="DPMSolverMultistepScheduler",
+    resume=True,
 ):
     
     if attack is not None:
@@ -276,6 +285,8 @@ def main(
         attack=attack,
         model=model,
         scheduler=scheduler,
+        output_prefix=results_folder.replace("/", "_")+"_",
+        resume=resume,
     )
 
     delete_temp_folder(gt_temp)

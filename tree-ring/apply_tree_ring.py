@@ -47,7 +47,7 @@ def get_captions(hf_dataset, split=None, num_files_to_process=-1, with_gt_id=Fal
 @click.option("--output_folder", default="outputs", show_default=True, help="Folder to put results in.")
 @click.option("--channel", default=0, show_default=True, help="Channel to put tree-ring watermark in.")
 @click.option("--num_files_to_process", default=-1, show_default=True, help="The number of files to actually process.")
-@click.option("--resume", is_flag=True, show_default=True, default=True, help="Resume from previous run.")
+@click.option("--resume", is_flag=True, show_default=True, default=False, help="Resume from previous run.")
 @click.option("--model", default="stabilityai/stable-diffusion-2-1-base", show_default=True, help="Diffusion model to use")
 @click.option("--scheduler", default="DPMSolverMultistepScheduler", show_default=True, help="Scheduler to use from [DPMSolverMultistepScheduler, DDIMScheduler]")
 @click.option("--visualize_keys", is_flag=True, show_default=True, default=False, help="Save visualizations of the key in the fourier space.")
