@@ -21,10 +21,13 @@ rm val2017.zip
 # Reproducing Results
 
 Commands to run:
- 1. `python apply_tree_ring.py`
- 2. `python eval_tree_ring.py`
- 3. `python eval_tree_ring.py --attack rotation`
- 4. `python eval_tree_ring.py --attack blur`
+ 1. `python apply_tree_ring.py` (`--visualize_keys` to save key visualizations)
+ 2. `python eval_tree_ring.py` (evaluate with no attacks)
+ 3. `python eval_tree_ring.py --attack rotation` (evaluate with 75 degree rotation)
+ 4. `python eval_tree_ring.py --attack blur` (evaluate with radius 4 Gaussian blurring)
+ <!-- 5. `python apply_tree_ring --key_file example_good_key.pt --num_files_to_process 1000 --output_folder outputs_single_key` (generate tree-ring images with good key)
+ 6. `python eval_tree_ring.py` -->
+ 7. (Optional) `python get_reversed_latents.py --save_visualizations_instead` to visualize renoised latents
 
 # Generate Tree-Ring Images
 ```python apply_tree_ring.py```
@@ -90,7 +93,7 @@ Options:
   --keys_folder TEXT           Path to keys folder  [default: outputs/keys]
   --masks_folder TEXT          Path to masks folder  [default: outputs/masks]
   --attack TEXT                Attack to evaluate against from [none,
-                               rotation, blur]
+                               rotation, blur]  [default: none]
   --model TEXT                 Diffusion model to use  [default:
                                stabilityai/stable-diffusion-2-1-base]
   --scheduler TEXT             Scheduler to use from
@@ -127,21 +130,23 @@ Helper file for extracting the reversed latents.
 Inputs:
 ```
 Options:
-  --processed_file TEXT        Path to processed.txt  [default:
-                               outputs/processed.txt]
-  --unwatermarked_folder TEXT  Path to unwatermarked images folder  [default:
-                               outputs/unwatermarked]
-  --watermarked_folder TEXT    Path to watermarked images folder  [default:
-                               outputs/watermarked]
-  --output_folder TEXT         Folder to output reversed latents to  [default:
-                               reversed_latents]
-  --resume                     Resume from previous run.  [default: True]
-  --model TEXT                 Diffusion model to use  [default:
-                               stabilityai/stable-diffusion-2-1-base]
-  --scheduler TEXT             Scheduler to use from
-                               [DPMSolverMultistepScheduler, DDIMScheduler]
-                               [default: DPMSolverMultistepScheduler]
-  --help                       Show this message and exit.
+  --processed_file TEXT          Path to processed.txt  [default:
+                                 outputs/processed.txt]
+  --unwatermarked_folder TEXT    Path to unwatermarked images folder
+                                 [default: outputs/unwatermarked]
+  --watermarked_folder TEXT      Path to watermarked images folder  [default:
+                                 outputs/watermarked]
+  --output_folder TEXT           Folder to output reversed latents to
+                                 [default: reversed_latents]
+  --save_visualizations_instead  Whether to only save the visualizations of
+                                 the latents
+  --resume                       Resume from previous run.  [default: True]
+  --model TEXT                   Diffusion model to use  [default:
+                                 stabilityai/stable-diffusion-2-1-base]
+  --scheduler TEXT               Scheduler to use from
+                                 [DPMSolverMultistepScheduler, DDIMScheduler]
+                                 [default: DPMSolverMultistepScheduler]
+  --help                         Show this message and exit.
 ```
 
 # References
