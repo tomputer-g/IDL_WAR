@@ -19,3 +19,4 @@ dependencies:
     - bchlib==0.7
     - stn==1.0.1
     - tensorflow-gpu==1.14.0
+    - pytorch_fid==0.3.0
