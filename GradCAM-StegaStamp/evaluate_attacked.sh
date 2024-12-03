@@ -1,7 +1,7 @@
-stegastamp_model = $1
-attacked_dir = $2
-attacked_subfolder_name = $3
-unwatermarked_dir = $4
+stegastamp_model=$1
+attacked_dir=$2
+attacked_subfolder_name=$3
+unwatermarked_dir=$4
 
 for i in $(seq 0 25 75);
 do
