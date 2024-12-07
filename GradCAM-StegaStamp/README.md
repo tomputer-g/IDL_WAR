@@ -66,6 +66,12 @@ Uses the residuals from StegaStamp instead of GradCAM to attack the images, but 
 bash generate_attacked.sh residuals_diff_message /path/to/watermarked_images /path/to/watermarked_different_message_images /path/to/unwatermarked_images
 ```
 
+#### Generate Randomized Attack Images
+Attacks random pixels, but with the same percentage as what a GradCAM attack would use. Used to show that GradCAM is actually attacking meaningful pixels (which is better than random).
+```
+bash generate_attacked.sh randomized /path/to/watermarked_images /path/to/generated_gradcams
+```
+
 ### Visualizations
 
 ```bash
