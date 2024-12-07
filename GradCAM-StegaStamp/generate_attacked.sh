@@ -73,7 +73,7 @@ then
     do
         echo $j
         python attack_blur.py --wm_images_dir $2 \
-                              --output_dir $3 \
+                              --output_dir blur_attack/blur_attack \
                               --blur_size $j
     done
 fi
