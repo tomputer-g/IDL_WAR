@@ -12,6 +12,24 @@ conda env create -f environment.yml
 conda activate StegaStamp
 ```
 
+Download StegaStamp model from https://drive.google.com/file/d/19OmmmdpLRrF6a0Hcl4liA3B7zL8FcMkL/view?usp=sharing (or train your own using the StegaStamp repository). Unpack the checkpoint:
+```
+unzip stegastamp.zip
+mv test/ stegastamp_model
+```
+In this case, `stegastamp_model` is `/path/to/StegaStampModel` in the following commands.
+
+Download and unpack the StegaStamp images watermarked with the message "Stega!!" from https://drive.google.com/file/d/1m5cTDvhjRMJG0UZ45sKXhoXFMAuhrzY5/view?usp=sharing or generate them using StegaStamp.
+
+Download and unpack the StegaStamp images watermarked with the message "Hello" from https://drive.google.com/file/d/1Y1eDa9eRK1uwZ3lhetdJYgbUAvVOf7k5/view?usp=sharing or generate them using StegaStamp.
+
+Download and unpack the unwatermarked images from http://images.cocodataset.org/zips/val2017.zip or use your own.
+```
+wget http://images.cocodataset.org/zips/val2017.zip
+unzip val2017
+```
+
+
 ### Reproduce Results
 
 
@@ -58,13 +76,10 @@ This should produce a figure where the image is side by side with the GradCAM ac
 
 ### Notes
 
-Get the model checkpoint from Dongjun, and the watermarked image also from Dongjun. The unwatermarked corresponding images should be from our google drive.
-
 See StegaStamp decoder model definition [here](https://github.com/tancik/StegaStamp/blob/master/models.py#L82-L93). Note that at the end of the same file, the outputs of the decoder model is passed through a Sigmoid layer and then a Round operation (which destroys the gradient information), so we use the Sigmoid layer instead for the 'output'.
 
 The original StegaStamp code is in Tensorflow v1, so GradCAM was also implemented in TF V1. 
 
 ### Citations
 
-The `decode_gradcam.py` code is adapted from `decode_image.py` from the StegaStamp authors' original repository here (https://github.com/tancik/StegaStamp/tree/master). A large amount of code is in reference to this.
-
+The `decode_gradcam.py` code is adapted from `decode_image.py` from the StegaStamp authors' original repository here (https://github.com/tancik/StegaStamp/tree/master). The StegaStamp inference code is referenced from here.
