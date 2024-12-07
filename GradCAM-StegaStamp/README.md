@@ -2,7 +2,7 @@
 
 ### Overview
 
-This is an application of GradCAM on the StegaStamp image decoder in order to extract the locations of interest for the decoder model. Our hypothesis is that these locations are where the decoder model seeks secret bits from, and therefore contains the residuals for StegaStamp. We can then apply localized attacks to these areas of interest to avoid unnecessarily damaging the input image.
+This is an application of GradCAM on the StegaStamp image decoder in order to extract the locations of interest for the decoder model. Our hypothesis is that these locations are where the decoder model seeks secret bits from, and therefore contains the residuals for StegaStamp. We can then apply localized attacks to these areas of interest to avoid unnecessarily damaging the input image. In particular, we use blurring. Thus, we call the attack localized blurring attack (LBA for short).
 
 ### Setup
 
