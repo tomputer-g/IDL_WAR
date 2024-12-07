@@ -1,0 +1,6 @@
+accelerate
+numpy
+tqdm
+diffusers
+transformers
+torch

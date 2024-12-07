@@ -1,2 +1,0 @@
-# IDL_WAR
-Hello
