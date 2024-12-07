@@ -33,8 +33,13 @@ Run the attack:
 # rinse.py watermarked_path output_path strength n_rinse [--model StableDiffusionMODEL]
 # Model can be "CompVis/stable-diffusion-v1-4" or (by default) "stabilityai/stable-diffusion-2-1" or something else
 # Output folder will be created if it doesn't already exist.
-python rinse.py ./watermarked_example/ ./attacked_example 10 1
+python rinse.py ./watermarked_example/ ./attacked_example <strength> <num_rinses>
 ```
+
+For our baseline evaluation, we used the following strength and num_rinses combinations:
+ - Regeneration: (60, 1)
+ - Rinsing attack: (20, 2, "CompVis/stable-diffusion-v1-4")
+ - Rinsing attack: (10, 2)
 
 ### Getting Metrics
 
@@ -42,7 +47,18 @@ The results in our report are generated using the NeurIPS 2024 Erasing the Invis
 
 The evaluation requires three sets of images: The original images (unwatermarked), watermarked images, and attacked watermarked images. By default, the kit evaluates the performance and quality of the 5000 MSCOCO images (which is also provided on their github page), and expects images numbered from 0.png to 4999.png for each of the three sets of images. 
 
-For convenience we added a submodule for this repository at the root of our repository. Simply clone it and follow their setup steps. Here's an example command and its output:
+Note: this submodule is not maintained by us and thus can be quite picky if you do not use the 5000 MSCOCO images that it desires. Use with caution.
+
+For convenience we added a submodule for this repository at the root of our repository. Simply clone it and follow their setup steps.
+```
+git submodule init
+git submodule update
+cd ../warm-up-kit
+pip install -e .
+cd ../latent_rinsing_attack
+```
+
+Here's an example command and its output:
 
 ```bash
 erasinginvisible eval --path <Attacked> --w_path <Unattacked Watermarked> --uw_path <Unwatermarked>
