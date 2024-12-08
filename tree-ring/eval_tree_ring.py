@@ -54,7 +54,7 @@ def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
 
 def copy_resized(img_path, size, img_dest, attack=None):
     try:
-        extension = ".png" if image[-4:] == ".png" else ".jpg"
+        extension = ".png" if img_path[-4:] == ".png" else ".jpg"
         alternative = ".jpg" if extension == ".png" else ".png"
         if not os.path.exists(img_path):
             img_path = img_path[:-4]+alternative
