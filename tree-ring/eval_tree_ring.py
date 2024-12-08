@@ -121,8 +121,8 @@ def eval_auc_and_tpr(
     true_labels = []
 
     for new_data_file in new_data_files.values():
-        if not resume and os.path.exists(new_data_file):
-            os.remove(new_data_file)
+        if not resume and os.path.exists(output_prefix+new_data_file):
+            os.remove(output_prefix+new_data_file)
 
     precalculated_data = {}
     for precalculated_data_file in precalculated_data_files.values():
