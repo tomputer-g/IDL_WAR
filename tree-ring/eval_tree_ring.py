@@ -11,6 +11,7 @@ from diffusers import (DDIMScheduler, DDIMInverseScheduler)
 from PIL import Image, ImageFilter, UnidentifiedImageError
 from pytorch_fid.fid_score import calculate_fid_given_paths
 from sklearn.metrics import auc, roc_curve
+import glob
 
 from image_generators import get_tree_ring_generator
 
@@ -40,6 +41,11 @@ def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
     os.mkdir(temp_folder)
 
     for image in images:
+        extension = ".png" if image[-4:] == ".png" else ".jpg"
+        alternative = ".jpg" if extension == ".png" else ".png"
+        if not os.path.exists(os.path.join(original_folder, image)):
+            image = image[:-4]+alternative
+        
         shutil.copy2(
             os.path.join(original_folder, image), os.path.join(temp_folder, image)
         )
@@ -48,6 +54,11 @@ def copy_to_temp_folder(images: list[str], original_folder: str) -> str:
 
 def copy_resized(img_path, size, img_dest, attack=None):
     try:
+        extension = ".png" if image[-4:] == ".png" else ".jpg"
+        alternative = ".jpg" if extension == ".png" else ".png"
+        if not os.path.exists(img_path):
+            img_path = img_path[:-4]+alternative
+
         with Image.open(img_path) as img:
             if attack is not None:
                 img = attack(img)
@@ -138,18 +149,32 @@ def eval_auc_and_tpr(
 
     for i, image in enumerate(images):
         try:
-            unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
-            watermarked = Image.open(os.path.join(watermarked_folder, image))
+            extension = ".png" if image[-4:] == ".png" else ".jpg"
+            alternative = ".jpg" if extension == ".png" else ".png"
+            if os.path.exists(os.path.join(unwatermarked_folder, image)):
+                unwatermarked = Image.open(os.path.join(unwatermarked_folder, image))
+            else:
+                unwatermarked = Image.open(os.path.join(unwatermarked_folder, image[:-4]+alternative))
+        except UnidentifiedImageError:
+            print(f"{image} has a broken image file. Please regenerate.")
+            continue
 
-            if attack is not None:
+        try:
+            extension = ".png" if image[-4:] == ".png" else ".jpg"
+            alternative = ".jpg" if extension == ".png" else ".png"
+            if os.path.exists(os.path.join(watermarked_folder, image)):
+                watermarked = Image.open(os.path.join(watermarked_folder, image))
+            else:
+                watermarked = Image.open(os.path.join(watermarked_folder, image[:-4]+alternative))
+        except UnidentifiedImageError:
+            print(f"{image} has a broken image file. Please regenerate.")
+            continue
+
+        if attack is not None:
                 # watermarked.save("debug_unattacked.jpg")
                 unwatermarked = attack(unwatermarked)
                 watermarked = attack(watermarked)
                 # watermarked.save("debug_attacked.jpg")
-
-        except UnidentifiedImageError:
-            print(f"{image} has a broken image file. Please regenerate.")
-            continue
 
         if (image, "unwatermarked") not in precalculated_data:
             p_val, _ = generator.detect(
@@ -233,8 +258,11 @@ def main(
     keys_folder = os.path.join(results_folder, "keys")
     masks_folder = os.path.join(results_folder, "masks")
 
-    with open(processed_file, mode="r") as f:
-        images = [line.strip() for line in f.readlines()]
+    if os.path.exists(processed_file):
+        with open(processed_file, mode="r") as f:
+            images = [line.strip() for line in f.readlines()]
+    else:
+        images = [os.path.basename(filepath) for filepath in glob.glob(watermarked_folder + '/*')]
 
     gt_temp = copy_to_temp_folder(images, gt_folder)
     unwatermarked_temp = copy_to_temp_folder(images, unwatermarked_folder)
@@ -269,8 +297,18 @@ def main(
             continue
 
         try:
-            Image.open(os.path.join(unwatermarked_temp, image))
-            Image.open(os.path.join(watermarked_temp, image))
+            extension = ".png" if image[-4:] == ".png" else ".jpg"
+            alternative = ".jpg" if extension == ".png" else ".png"
+
+            if os.path.exists(os.path.join(unwatermarked_temp, image)):
+                Image.open(os.path.join(unwatermarked_temp, image))
+            else:
+                Image.open(os.path.join(unwatermarked_temp, image[:-4]+alternative))
+                
+            if os.path.exists(os.path.join(watermarked_temp, image)):
+                Image.open(os.path.join(watermarked_temp, image))
+            else:
+                Image.open(os.path.join(watermarked_temp, image[:-4]+alternative))
         except UnidentifiedImageError:
             print(f"{image} has a broken image file. Please regenerate.")
             images.remove(image)
