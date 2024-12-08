@@ -18,6 +18,19 @@ unzip val2017.zip
 rm val2017.zip
 ```
 
+### Numpy Version
+
+If you receive a message like this during your run:
+
+```bash
+  File "/home/<USERNAME>/.local/lib/python3.10/site-packages/pandas/_libs/__init__.py", line 18, in <module>
+    from pandas._libs.interval import Interval
+  File "interval.pyx", line 1, in init pandas._libs.interval
+ValueError: numpy.dtype size changed, may indicate binary incompatibility. Expected 96 from C header, got 88 from PyObject
+```
+
+We found that installing `numpy==1.26.4` fixes the issue and allows the run to proceed. See more details [here](https://stackoverflow.com/a/78701492).
+
 # Reproducing Results
 
 Commands to run:
