@@ -222,7 +222,10 @@ def main(
 ):
     
     if attack is not None:
+        attack_name = attack
         attack = get_attack(attack)
+    else:
+        attack_name = ""
 
     processed_file = os.path.join(results_folder, "processed.txt")
     unwatermarked_folder = os.path.join(results_folder, "unwatermarked")
@@ -285,7 +288,7 @@ def main(
         attack=attack,
         model=model,
         scheduler=scheduler,
-        output_prefix=results_folder.replace("/", "_")+"_",
+        output_prefix=results_folder.replace("/", "_")+"_"+attack_name+"_",
         resume=resume,
     )
 
