@@ -1,0 +1,22 @@
+name: StegaStamp
+channels:
+  - conda-forge
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+dependencies:
+  - python==3.6.11
+  - pip==21.3.1
+  - opencv==3.4.3
+  - pillow==5.4.1
+  - cudatoolkit==10.0
+  - cudnn==7.6.5.32
+  - numpy==1.16
+  - protobuf==3.6
+  - absl-py==0.7
+  - matplotlib==3.2.2
+  - tqdm==4.64.1
+  - pip:
+    - bchlib==0.7
+    - stn==1.0.1
+    - tensorflow-gpu==1.14.0
+    - pytorch_fid==0.3.0
