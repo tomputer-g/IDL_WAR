@@ -1,10 +1,10 @@
-# IDL-WAR: Invisible Watermarking And Robustness
+  # IDL-WAR: Invisible Watermarking And Robustness
 
 ## Overview
 
 This is the Final Project for Team 3 of Carnegie Mellon University's Introduction to Deep Learning (11-785) course in the fall semester of 2024. Our team members are Dongjun Hwang, Sungwon Woo, Tom Gao, and Raymond Luo (all equal contribution).
 
-Our project concerns Invisible Watermarks - messages that are encoded into AI-generated images in order to detect and identify sources of AI generation. We primarily investigate StegaStamp and Tree-Ring as watermarking methods. In a nutshell, StegaStamp is an **image-space** stenographic algorithm that hides the given message into the pixels of the image so that they are resistant against distortions of images; Tree-Ring embeds the message in the Fourier-Transformed initial **latent-space** noise vector, which can be retrieved through the reverse-DDIM process. 
+Our project concerns Invisible Watermarks - messages that are encoded into AI-generated images in order to detect and identify sources of AI generation. We primarily investigate StegaStamp and Tree-Ring as watermarking methods. In a nutshell, StegaStamp is an **image-space** stenographic algorithm that hides the given message into the pixels of the image so that they are resistant against distortions of images; Tree-Ring embeds the message in the Fourier-Transformed initial **latent-space** noise vector, which can be retrieved through the reverse-DDIM process. We explore how these two watermarks can be combined by placing StegaStamp on top of Tree-Ring naively and with a remover architecture. Furthermore, we explore how attacks can reduce their image quality degradation by only attacking specific important pixels. We use a base blurring attack and use GradCAM to localize which pixels are significant.
 
 A copy of our final report will be linked when it is made publicly available. You can view our quick 5-minute [final presentation video here](https://youtu.be/0vwFG1HSrUE).
 
