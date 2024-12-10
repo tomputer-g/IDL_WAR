@@ -10,6 +10,12 @@ We highly refer the code from [**StegaStamp**](http://www.matthewtancik.com/steg
 pip install -r requirements.txt
 ```
 
+Alternatively, use the provided conda environment:
+```
+conda env create -f environment.yml
+conda activate StegaStamp
+```
+
 ## Dataset
 - We use [MS COCO](https://cocodataset.org/#home) train set for training the original stegastamp.
 - We use [MS COCO](https://cocodataset.org/#home) validation set for training the remover architecture.
