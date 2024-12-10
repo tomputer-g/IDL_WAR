@@ -1,6 +1,6 @@
 # Remover StegaStamp
 
-We highly refer the code from [**StegaStamp**](http://www.matthewtancik.com/stegastamp) for the base StegaStamp code. We build on top of it by training a remover network.
+We highly refer the code from [**StegaStamp**](http://www.matthewtancik.com/stegastamp) for the base StegaStamp code. We build on top of it by adding a remover network.
 
 ## Installation
 - Pull tensorflow docker (`tensorflow/tensorflow:1.14.0-gpu-py3`)
