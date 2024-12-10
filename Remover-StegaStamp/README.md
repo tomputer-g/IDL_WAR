@@ -62,7 +62,7 @@ python encode_image.py \
   --save_dir out/ \
   --secret Hello
 ```
-This will save both the StegaStamp and the residual that was applied to the original image. If you want to use an image directory instead, use `--image_dir` instead of `--image`.
+This will save both the StegaStamp and the residual that was applied to the original image. If you want to use an image directory instead, use `--image_dir` instead of `--image`. In particular, for our experiments we watermarked with the secret Stega!! and the secret Hello.
 
 ## Decoding a Message
 The script `decode_image.py` can be used to decode a message from a StegaStamp.
