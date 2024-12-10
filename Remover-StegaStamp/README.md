@@ -74,7 +74,7 @@ python decode_image.py \
   --image out/test_hidden.png
 ```
 
-If you want to use an image directory instead, use `--image_dir` instead of `--image`.
+If you want to use an image directory instead, use `--image_dir` instead of `--image`. This will also calculate metrics such as the bit accuracy, exact message accuracy, and the detection rate.
 
 ## Detecting and Decoding
 The script `detector.py` can be used to detect and decode StegaStamps in an image. This is useful in cases where there are multiple StegaStamps are present or the StegaStamp does not fill the frame of the image.

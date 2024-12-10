@@ -54,6 +54,7 @@ def main():
 
     acc = 0
     bit_acc = 0
+    detection_rate = 0
 
     for filename in tqdm(files_list):
         image = Image.open(filename).convert("RGB")
@@ -80,6 +81,7 @@ def main():
         if bitflips != -1:
             try:
                 code = data.decode("utf-8")
+                detection_rate += 1
                 if code == secret_key:
                     acc += 1
                 continue
@@ -89,6 +91,7 @@ def main():
     
     print(f"Bit Accuracy: {bit_acc/len(files_list)}")
     print(f"Accuracy: {acc/len(files_list)}")
+    print(f"Detection Rate: {detection_rate/len(files_list)}")
 
 if __name__ == "__main__":
     main()
