@@ -25,6 +25,3 @@ Each folder at the root of this repository is a self-contained piece of the proj
 * tree-ring: Implementation of the Tree-Ring watermarking algorithm. Scripts are included to apply, evaluate, adn get reversed latents for images.
 
 * warm-up-kit submodule: We found that the NeurIPS 2024 Erasing the Invisible Competition had a suite of watermark performance and image quality metrics that are helpful in evaluating the results of watermarking attacks. We included this repository as a submodule in our project.
-
-
-More folders to come!
