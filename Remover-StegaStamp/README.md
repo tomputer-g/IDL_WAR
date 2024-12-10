@@ -1,6 +1,6 @@
 # Remover StegaStamp
 
-We highly refer the code from [**StegaStamp**](http://www.matthewtancik.com/stegastamp)
+We highly refer the code from [**StegaStamp**](http://www.matthewtancik.com/stegastamp) for the base StegaStamp code. We build on top of it by training a remover network.
 
 ## Installation
 - Pull tensorflow docker (`tensorflow/tensorflow:1.14.0-gpu-py3`)
@@ -17,8 +17,11 @@ conda activate StegaStamp
 ```
 
 ## Dataset
-- We use [MS COCO](https://cocodataset.org/#home) train set for training the original stegastamp.
-- We use [MS COCO](https://cocodataset.org/#home) validation set for training the remover architecture.
+- We use [MS COCO](https://cocodataset.org/#home) 2017 train set for training the original stegastamp.
+- We use [MS COCO](https://cocodataset.org/#home) 2017 validation set for training the remover architecture.
+
+## Pretrained Weights
+The pretrained weights can be downloaded from https://drive.google.com/file/d/19OmmmdpLRrF6a0Hcl4liA3B7zL8FcMkL/view?usp=sharing. Once downloaded, unzip the file with `unzip stegastamp.zip`. This will result in a folder called `test`. Move test to `saved_models`. Then rename `test` to `stegastamp_pretrained`.
 
 ## Training
 ### Encoder / Decoder
@@ -59,7 +62,7 @@ python encode_image.py \
   --save_dir out/ \
   --secret Hello
 ```
-This will save both the StegaStamp and the residual that was applied to the original image.
+This will save both the StegaStamp and the residual that was applied to the original image. If you want to use an image directory instead, use `--image_dir` instead of `--image`.
 
 ## Decoding a Message
 The script `decode_image.py` can be used to decode a message from a StegaStamp.
@@ -70,6 +73,8 @@ python decode_image.py \
   saved_models/stegastamp_pretrained \
   --image out/test_hidden.png
 ```
+
+If you want to use an image directory instead, use `--image_dir` instead of `--image`.
 
 ## Detecting and Decoding
 The script `detector.py` can be used to detect and decode StegaStamps in an image. This is useful in cases where there are multiple StegaStamps are present or the StegaStamp does not fill the frame of the image.
