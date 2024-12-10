@@ -76,6 +76,17 @@ python decode_image.py \
 
 If you want to use an image directory instead, use `--image_dir` instead of `--image`. This will also calculate metrics such as the bit accuracy, exact message accuracy, and the detection rate.
 
+## Removing StegaStamp using Remover Network
+The script `remove_image.py` can be used to remove StegaStamp watermarks.
+
+Example usage:
+```bash=
+python remove_image.py \
+  --checkpoint ./saved_models/remover/model_50000.ckpt
+```
+
+If you want to use an image directory instead, use `--image_dir` instead of `--image`.
+
 ## Detecting and Decoding
 The script `detector.py` can be used to detect and decode StegaStamps in an image. This is useful in cases where there are multiple StegaStamps are present or the StegaStamp does not fill the frame of the image.
 
