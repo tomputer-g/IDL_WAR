@@ -1,3 +1,5 @@
+# Remover StegaStamp
+
 We highly refer the code from [**StegaStamp**](http://www.matthewtancik.com/stegastamp)
 
 ## Installation
